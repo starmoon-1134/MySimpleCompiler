@@ -1,10 +1,4 @@
-jj
-a
-tet
 c
-eh
 dh
 ch
 tex
-main
-stest
