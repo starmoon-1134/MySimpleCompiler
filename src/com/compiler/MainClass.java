@@ -8,10 +8,10 @@ public class MainClass {
   public static void main(String[] args) throws IOException {
     // TODO 自动生成的方法存根
     // System.out.println(MainClass.class.getResource("/"));
-    // sourceFileNameString = MainClass.class.getResource("/").getFile() + "myCpp.c";
+    sourceFileNameString = MainClass.class.getResource("/").getFile() + "myCpp.c";
+    LexicalAnalyzer.getToken(sourceFileNameString);
     SyntaxAnalyzer test = new SyntaxAnalyzer();
-    test.startAnalyse(
-        MainClass.class.getResource("/").getFile() + "test_token_ArithmeticExpression.txt");
+    test.startAnalyse(MainClass.class.getResource("/").getFile() + "test_token_p187.txt");
     // ArrayList<Item> a1 = new ArrayList<>();
     // ArrayList<Item> a2 = new ArrayList<>();
     // Item t1 = new Item(0, 1, "dji");
