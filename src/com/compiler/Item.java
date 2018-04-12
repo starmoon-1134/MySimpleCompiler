@@ -58,7 +58,7 @@ import java.util.Objects;
 //  }
 //}
 
-class Item {
+class Item implements Comparable<Item> {
   int pro_index;// 产生式在SyntaxAnlyzer中的productions中的索引
   int nextSymbol_index;// 相当于圆点位置
   String lookahead;// 搜索符
@@ -109,5 +109,30 @@ class Item {
   @Override
   public int hashCode() {
     return Objects.hash(pro_index, nextSymbol_index, lookahead);
+  }
+
+  @Override
+  public int compareTo(Item item) {
+    if (this.hashCode() > item.hashCode()) {
+      return 1;
+    } else if (this.hashCode() < item.hashCode()) {
+      return -1;
+    } else {
+      return 0;
+    }
+    // if(this.pro_index>item.pro_index) {
+    // return 1;
+    // }else if(this.pro_index<item.pro_index) {
+    // return -1;
+    // }else {
+    // if(this.nextSymbol_index>item.nextSymbol_index) {
+    // return 1;
+    // }else if(this.nextSymbol_index<item.nextSymbol_index) {
+    // return -1;
+    // }else {
+    // if(this.lookahead.hash)
+    // }
+    // }
+
   }
 }

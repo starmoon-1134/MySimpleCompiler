@@ -30,13 +30,13 @@ public class SyntaxAnalyzer {
   private ArrayList<String> terminals;/* 定义："@end"为结束符号，"@null"为空符号 */
   private ArrayList<ArrayList<String>> actionTable;
   private ArrayList<ArrayList<Integer>> gotoTable;
-  private ArrayList<ArrayList<Item>> closureOfItemSets;
+  private ArrayList<HashSet<Item>> closureOfItemSets;
 
   public SyntaxAnalyzer() throws IOException
   {
-    // getProductions(MainClass.class.getResource("/").getFile() + "production.txt");
+    getProductions(MainClass.class.getResource("/").getFile() + "production.txt");
     /* 登记语法变量 */
-    int i, j, closureIndex;
+    int i, j;
     syntaxVariables = new ArrayList<>();
     for (i = 0; i < productions.length; i++) {
       if (!syntaxVariables.contains(productions[i][0])) {
@@ -55,13 +55,16 @@ public class SyntaxAnalyzer {
       }
     }
     terminals.add("@end");
+    // terminals.remove("@null");
     // if (!terminals.contains("@null")) {
     // terminals.add("@null");
+    // }
+    // for (String ssss : first("StartS")) {
+    // System.out.println(ssss);
     // }
 
     /* 构造项目集闭包、action表和goto表 */
     // 初始化
-    closureIndex = 0;
     actionTable = new ArrayList<>();
     gotoTable = new ArrayList<>();
     closureOfItemSets = new ArrayList<>();
@@ -75,7 +78,7 @@ public class SyntaxAnalyzer {
     }
 
     // 初始化I0
-    ArrayList<Item> curClosure = new ArrayList<Item>();
+    HashSet<Item> curClosure = new HashSet<Item>();
     curClosure.add(new Item(0, 1, "@end"));// "@end"表示输入结束符号
 
     // 算法5.8 LR1分析表的构造p187 ?5.7项目集规范族构造
@@ -91,18 +94,18 @@ public class SyntaxAnalyzer {
     // for (i = 0; i < closureOfItemSets.size(); i++) {
     // for (String X : allSymbols) {
     /* 新版本，按当前项目中的项目顺序，对X进行排列 */
+
     for (i = 0; i < closureOfItemSets.size(); i++) {
       allSymbols.clear();
       for (Item curItem : closureOfItemSets.get(i)) {
         String[] curProduction = productions[curItem.pro_index];
-        // if (curItem.nextSymbol_index < curProduction.length
         if (!isReducItem(curItem, curProduction)
             && !allSymbols.contains(curProduction[curItem.nextSymbol_index])) {
           allSymbols.add(curProduction[curItem.nextSymbol_index]);
         }
       }
       for (String X : allSymbols) {
-        ArrayList<Item> tmpClosure = go(i, X);
+        HashSet<Item> tmpClosure = go(i, X);
         if (!tmpClosure.isEmpty()) {
           int goIX_state;
           if ((goIX_state = closureOfItemSets.indexOf(tmpClosure)) < 0) { // !closureOfItemSets.contains(tmpClosure)
@@ -115,18 +118,17 @@ public class SyntaxAnalyzer {
           }
         }
       }
+
     }
     /* 构造action表和goto表 */
     for (i = 0; i < closureOfItemSets.size(); i++) {
       curClosure = closureOfItemSets.get(i);
-      for (
-
-      Item curItem : curClosure) {
+      for (Item curItem : curClosure) {
         String[] curProduction = productions[curItem.pro_index];
         if (isReducItem(curItem, curProduction)) {
           // 1.规约项目
           actionTable.get(i).set(terminals.indexOf(curItem.lookahead), "r:" + curItem.pro_index);
-          if (curItem.equals(closureOfItemSets.get(1).get(0))) {
+          if (curItem.equals(new Item(0, 2, "@end"))) {
             actionTable.get(i).set(terminals.indexOf(curItem.lookahead), "@acc");
           }
         } else if (terminals.contains(curProduction[curItem.nextSymbol_index])) {
@@ -143,7 +145,7 @@ public class SyntaxAnalyzer {
       }
     }
     // printProductions();
-    // printTableAndSet();
+    printTableAndSet();
 
   }
 
@@ -173,6 +175,7 @@ public class SyntaxAnalyzer {
           String[] action = curActionString.split(":");
           if (action[0].equals("s")) {
             // 3.1移进
+            // System.out.println("移进： " + nextSymbol);
             stateSt.push(Integer.valueOf(action[1]));
             symbolSt.push(nextSymbol);
             break;
@@ -204,7 +207,7 @@ public class SyntaxAnalyzer {
     // 打印项目集规范族
     int i, j;
     for (i = 0; i < closureOfItemSets.size(); i++) {
-      ArrayList<Item> curClosure = closureOfItemSets.get(i);
+      HashSet<Item> curClosure = closureOfItemSets.get(i);
       System.out.println("I" + i + ":");
       for (Item curItem : curClosure) {
         String[] curProduction = productions[curItem.pro_index];
@@ -265,42 +268,47 @@ public class SyntaxAnalyzer {
     System.out.println("----------------------------------------------");
   }
 
-  private void expandClosure(ArrayList<Item> closure) {
+  private void expandClosure(HashSet<Item> closure) {
     /* 计算LR1项目集I（closure）的闭包-》 书上的Closure函数 */
     int i, j;
     String[] curProduction;
-    Item curItem, tmpItem;
-    for (i = 0; i < closure.size(); i++) {
-      // 遍历闭包中的所有项目，对每个项目进行"扩张"
-      curItem = closure.get(i);
-      curProduction = productions[curItem.getPro_index()];
-      if (isReducItem(curItem, curProduction)) {
-        // 1规约项目,跳过
-      } else if (syntaxVariables.contains(curProduction[curItem.nextSymbol_index])) {
-        // 2待约项目 A->α.Xβ,a
-        // 计算first(βa)
-        ArrayList<String> beta_aArrayList = new ArrayList<>();
-        for (j = curItem.nextSymbol_index + 1; j < curProduction.length; j++) {
-          beta_aArrayList.add(curProduction[j]);
-        }
-        beta_aArrayList.add(curItem.lookahead);
+    Item tmpItem;
+    int ttt = 1;
+    while (ttt == 1) {
+      ttt = 0;
+      Item[] myArray = closure.toArray(new Item[] {});
+      for (Item curItem : myArray) {
+        // 遍历闭包中的所有项目，对每个项目进行"扩张"
+        curProduction = productions[curItem.getPro_index()];
+        if (isReducItem(curItem, curProduction)) {
+          // 1规约项目,跳过
+        } else if (syntaxVariables.contains(curProduction[curItem.nextSymbol_index])) {
+          // 2待约项目 A->α.Xβ,a
+          // 计算first(βa)
+          ArrayList<String> beta_aArrayList = new ArrayList<>();
+          for (j = curItem.nextSymbol_index + 1; j < curProduction.length; j++) {
+            beta_aArrayList.add(curProduction[j]);
+          }
+          beta_aArrayList.add(curItem.lookahead);
 
-        HashSet<String> beta_aFirst = first(
-            (String[]) beta_aArrayList.toArray(new String[beta_aArrayList.size()]));
-        // 遍历所有产生式
-        for (j = 0; j < productions.length; j++) {
-          if (productions[j][0].equals(curProduction[curItem.nextSymbol_index])) {
-            // 找到了以B开头的产生式,与beta_aFirst的符号组合，产生新项目
-            for (String tmpLookahead : beta_aFirst) {// bug1<-beta_aArrayList
-              tmpItem = new Item(j, 1, tmpLookahead);
-              if (!closure.contains(tmpItem)) {
-                closure.add(tmpItem);
+          HashSet<String> beta_aFirst = first(
+              (String[]) beta_aArrayList.toArray(new String[beta_aArrayList.size()]));
+          // 遍历所有产生式
+          for (j = 0; j < productions.length; j++) {
+            if (productions[j][0].equals(curProduction[curItem.nextSymbol_index])) {
+              // 找到了以B开头的产生式,与beta_aFirst的符号组合，产生新项目
+              for (String tmpLookahead : beta_aFirst) {// bug1<-beta_aArrayList
+                tmpItem = new Item(j, 1, tmpLookahead);
+                if (!closure.contains(tmpItem)) {
+                  closure.add(tmpItem);
+                  ttt = 1;
+                }
               }
             }
           }
+        } else {
+          // 3移进项目跳过什么都不做
         }
-      } else {
-        // 3移进项目跳过什么都不做
       }
     }
   }
@@ -335,12 +343,13 @@ public class SyntaxAnalyzer {
       myArray[i] = (String[]) tempArray.toArray(new String[0]); // 注意此处的写法
     }
     productions = myArray;
+    productionReader.close();
   }
 
-  private ArrayList<Item> go(int i, String X) {
-    ArrayList<Item> ret = new ArrayList<>();
+  private HashSet<Item> go(int i, String X) {
+    HashSet<Item> ret = new HashSet<>();
     for (Item curItem : closureOfItemSets.get(i)) {// bug2.未检查X是否为圆点后的符号
-      if (curItem.nextSymbol_index < productions[curItem.pro_index].length
+      if (!isReducItem(curItem, productions[curItem.pro_index])
           && productions[curItem.pro_index][curItem.nextSymbol_index].equals(X))
         ret.add(curItem.getSuccesiveItem());
     }
@@ -387,7 +396,7 @@ public class SyntaxAnalyzer {
             continue;
           }
           // 2如果是非空产生式X->Y1_Y2_Y3...Yn
-          for (j = 2; j < productions[i].length; j++) {
+          for (j = 1; j < productions[i].length; j++) {
             if (terminals.contains(productions[i][j])) {
               // 2.1遇到终结符,添加终结符该并跳过该产生式
               ret.add(productions[i][j]);
