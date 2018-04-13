@@ -120,19 +120,5 @@ class Item implements Comparable<Item> {
     } else {
       return 0;
     }
-    // if(this.pro_index>item.pro_index) {
-    // return 1;
-    // }else if(this.pro_index<item.pro_index) {
-    // return -1;
-    // }else {
-    // if(this.nextSymbol_index>item.nextSymbol_index) {
-    // return 1;
-    // }else if(this.nextSymbol_index<item.nextSymbol_index) {
-    // return -1;
-    // }else {
-    // if(this.lookahead.hash)
-    // }
-    // }
-
   }
 }

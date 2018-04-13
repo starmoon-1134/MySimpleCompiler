@@ -1,6 +1,7 @@
 package com.compiler;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +35,11 @@ public class SyntaxAnalyzer {
 
   public SyntaxAnalyzer() throws IOException
   {
+    // PrintStream printStream = new PrintStream(new FileOutputStream(
+    // new File(MainClass.class.getResource("/").getFile() + "SyntaxResult.txt"), true));
+    // System.setOut(printStream);
+    // System.setErr(printStream);
+
     getProductions(MainClass.class.getResource("/").getFile() + "production.txt");
     /* 登记语法变量 */
     int i, j;
@@ -55,7 +61,7 @@ public class SyntaxAnalyzer {
       }
     }
     terminals.add("@end");
-    // terminals.remove("@null");
+    terminals.remove("@null");
     // if (!terminals.contains("@null")) {
     // terminals.add("@null");
     // }
@@ -144,12 +150,41 @@ public class SyntaxAnalyzer {
         }
       }
     }
+
+    int repeat = 0;
+    for (i = 0; i < closureOfItemSets.size(); i++) {
+      for (j = 0; j < closureOfItemSets.size(); j++) {
+        if (i == j)
+          continue;
+        HashSet<Item> ci = closureOfItemSets.get(i);
+        HashSet<Item> cj = closureOfItemSets.get(j);
+        if (ci.size() > cj.size()) {
+          continue;
+        }
+        int ttttt = 1;
+        for (Item item : ci) {
+          if (!cj.contains(item)) {
+            ttttt = 0;
+            break;
+          }
+        }
+        if (ttttt == 1) {
+          repeat++;
+        }
+      }
+    }
+    // for (i = 0; i < closureOfItemSets.size(); i++) {
+    // repeat += closureOfItemSets.get(i).size();
+    // }
+    System.out.println("repeat:" + repeat);
+
     // printProductions();
-    printTableAndSet();
+    // printTableAndSet();
 
   }
 
   public void startAnalyse(String tokenFileName) throws IOException {
+    boolean[] testnum = new boolean[416];
     FileReader FileReader = new FileReader(tokenFileName);
     BufferedReader fin = new BufferedReader(FileReader);
     Stack<Integer> stateSt = new Stack<>();
@@ -158,6 +193,7 @@ public class SyntaxAnalyzer {
     symbolSt.push("@end");
     String curLine;
     while ((curLine = fin.readLine()) != null) {
+      testnum[stateSt.peek()] = true;
       String[] tmpStrings = curLine.split(":");
       String nextSymbol = tmpStrings[0];
       while (true) {// bug5.规约之后nextSymbol并没有入栈，不应该再去读下一行
@@ -169,7 +205,7 @@ public class SyntaxAnalyzer {
         } else if (curActionString.equals("@acc")) {
           // 2.接受
           System.out.println("acc");
-          return;
+          break;
         } else {
           // 3.移进或规约
           String[] action = curActionString.split(":");
@@ -199,11 +235,19 @@ public class SyntaxAnalyzer {
         }
       } // while(true)
     } // while(curline!=null)
+    int used = 0;
+    for (int i = 0; i < 416; i++) {
+      if (testnum[i])
+        used++;
+    }
+    System.out.println("used:" + used);
     fin.close();
     FileReader.close();
+    // System.setOut(System.out);
+    // System.setErr(System.err);
   }
 
-  private void printTableAndSet() {
+  private void printTableAndSet() throws FileNotFoundException {
     // 打印项目集规范族
     int i, j;
     for (i = 0; i < closureOfItemSets.size(); i++) {
