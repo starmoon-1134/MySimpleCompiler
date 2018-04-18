@@ -1,14 +1,18 @@
 package com.compiler;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Stack;
+import java.util.TreeSet;
 
 public class SyntaxAnalyzer {
   private String[][] productions = {
@@ -31,14 +35,14 @@ public class SyntaxAnalyzer {
   private ArrayList<String> terminals;/* 定义："@end"为结束符号，"@null"为空符号 */
   private ArrayList<ArrayList<String>> actionTable;
   private ArrayList<ArrayList<Integer>> gotoTable;
-  private ArrayList<HashSet<Item>> closureOfItemSets;
+  private ArrayList<TreeSet<Item>> closureOfItemSets;
 
   public SyntaxAnalyzer() throws IOException
   {
-    // PrintStream printStream = new PrintStream(new FileOutputStream(
-    // new File(MainClass.class.getResource("/").getFile() + "SyntaxResult.txt"), true));
-    // System.setOut(printStream);
-    // System.setErr(printStream);
+    PrintStream printStream = new PrintStream(new FileOutputStream(
+        new File(MainClass.class.getResource("/").getFile() + "SyntaxResult.txt"), false));
+    System.setOut(printStream);
+    System.setErr(printStream);
 
     getProductions(MainClass.class.getResource("/").getFile() + "production.txt");
     /* 登记语法变量 */
@@ -62,6 +66,7 @@ public class SyntaxAnalyzer {
     }
     terminals.add("@end");
     terminals.remove("@null");
+    // testFirst();
     // if (!terminals.contains("@null")) {
     // terminals.add("@null");
     // }
@@ -84,7 +89,7 @@ public class SyntaxAnalyzer {
     }
 
     // 初始化I0
-    HashSet<Item> curClosure = new HashSet<Item>();
+    TreeSet<Item> curClosure = new TreeSet<Item>();
     curClosure.add(new Item(0, 1, "@end"));// "@end"表示输入结束符号
 
     // 算法5.8 LR1分析表的构造p187 ?5.7项目集规范族构造
@@ -111,7 +116,7 @@ public class SyntaxAnalyzer {
         }
       }
       for (String X : allSymbols) {
-        HashSet<Item> tmpClosure = go(i, X);
+        TreeSet<Item> tmpClosure = go(i, X);
         if (!tmpClosure.isEmpty()) {
           int goIX_state;
           if ((goIX_state = closureOfItemSets.indexOf(tmpClosure)) < 0) { // !closureOfItemSets.contains(tmpClosure)
@@ -156,8 +161,8 @@ public class SyntaxAnalyzer {
       for (j = 0; j < closureOfItemSets.size(); j++) {
         if (i == j)
           continue;
-        HashSet<Item> ci = closureOfItemSets.get(i);
-        HashSet<Item> cj = closureOfItemSets.get(j);
+        TreeSet<Item> ci = closureOfItemSets.get(i);
+        TreeSet<Item> cj = closureOfItemSets.get(j);
         if (ci.size() > cj.size()) {
           continue;
         }
@@ -169,18 +174,22 @@ public class SyntaxAnalyzer {
           }
         }
         if (ttttt == 1) {
+          System.out.println(j + "包含" + i);
           repeat++;
         }
       }
     }
-    // for (i = 0; i < closureOfItemSets.size(); i++) {
-    // repeat += closureOfItemSets.get(i).size();
-    // }
     System.out.println("repeat:" + repeat);
+    int itemCount = 0;
+    for (i = 0; i < closureOfItemSets.size(); i++) {
+      itemCount += closureOfItemSets.get(i).size();
+    }
+    System.out.println("ItemCount:" + itemCount);
 
     // printProductions();
-    // printTableAndSet();
-
+    printTableAndSet();
+    System.setOut(System.out);
+    System.setErr(System.err);
   }
 
   public void startAnalyse(String tokenFileName) throws IOException {
@@ -243,15 +252,13 @@ public class SyntaxAnalyzer {
     System.out.println("used:" + used);
     fin.close();
     FileReader.close();
-    // System.setOut(System.out);
-    // System.setErr(System.err);
   }
 
   private void printTableAndSet() throws FileNotFoundException {
     // 打印项目集规范族
     int i, j;
     for (i = 0; i < closureOfItemSets.size(); i++) {
-      HashSet<Item> curClosure = closureOfItemSets.get(i);
+      TreeSet<Item> curClosure = closureOfItemSets.get(i);
       System.out.println("I" + i + ":");
       for (Item curItem : curClosure) {
         String[] curProduction = productions[curItem.pro_index];
@@ -312,7 +319,7 @@ public class SyntaxAnalyzer {
     System.out.println("----------------------------------------------");
   }
 
-  private void expandClosure(HashSet<Item> closure) {
+  private void expandClosure(TreeSet<Item> closure) {
     /* 计算LR1项目集I（closure）的闭包-》 书上的Closure函数 */
     int i, j;
     String[] curProduction;
@@ -390,8 +397,35 @@ public class SyntaxAnalyzer {
     productionReader.close();
   }
 
-  private HashSet<Item> go(int i, String X) {
-    HashSet<Item> ret = new HashSet<>();
+  private int getIndexOfSet(TreeSet<Item> set) {
+    int i, j;
+    Item[] cj = set.toArray(new Item[] {});
+    for (i = 0; i < closureOfItemSets.size(); i++) {
+      TreeSet<Item> ci = closureOfItemSets.get(i);
+      for (j = 0; j < set.size(); j++) {
+        if (!ci.contains(cj[j])) {
+          break;
+        }
+      }
+      if (j < set.size()) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private void testFirst() {
+    for (int i = 0; i < syntaxVariables.size(); i++) {
+      String curString = syntaxVariables.get(i);
+      System.out.print(curString + ":");
+      for (String fi : first(curString))
+        System.out.print(fi + ",");
+      System.out.println();
+    }
+  }
+
+  private TreeSet<Item> go(int i, String X) {
+    TreeSet<Item> ret = new TreeSet<>();
     for (Item curItem : closureOfItemSets.get(i)) {// bug2.未检查X是否为圆点后的符号
       if (!isReducItem(curItem, productions[curItem.pro_index])
           && productions[curItem.pro_index][curItem.nextSymbol_index].equals(X))
@@ -470,7 +504,7 @@ public class SyntaxAnalyzer {
             ret.add("@null");
           }
         }
-      }
+      } // 潜在bug：遇到X直接跳过，但若该X中包含空符号，需要继续往后扫。
     }
     return ret;
   }
