@@ -44,7 +44,7 @@ public class SyntaxAnalyzer {
     System.setOut(printStream);
     System.setErr(printStream);
 
-    getProductions(MainClass.class.getResource("/").getFile() + "production.txt");
+    getProductions(MainClass.class.getResource("/").getFile() + "production_e.txt");
     /* 登记语法变量 */
     int i, j;
     syntaxVariables = new ArrayList<>();
@@ -119,6 +119,15 @@ public class SyntaxAnalyzer {
         TreeSet<Item> tmpClosure = go(i, X);
         if (!tmpClosure.isEmpty()) {
           int goIX_state;
+          // if ((goIX_state = getIndexOfSet(tmpClosure)) < 0) { //
+          // !closureOfItemSets.contains(tmpClosure)
+          // closureOfItemSets.add(tmpClosure);
+          // transfer.put(i + ":" + X, closureOfItemSets.size() - 1);
+          // actionTable.add((ArrayList<String>) blankLineOfActionTable.clone());
+          // gotoTable.add((ArrayList<Integer>) blankLineOfGotoTable.clone());
+          // } else {// bug3.i状态读入X将要转移的状态已经存在，但仍要添加一条边
+          // transfer.put(i + ":" + X, goIX_state);
+          // }
           if ((goIX_state = closureOfItemSets.indexOf(tmpClosure)) < 0) { // !closureOfItemSets.contains(tmpClosure)
             closureOfItemSets.add(tmpClosure);
             transfer.put(i + ":" + X, closureOfItemSets.size() - 1);
@@ -223,6 +232,7 @@ public class SyntaxAnalyzer {
             // System.out.println("移进： " + nextSymbol);
             stateSt.push(Integer.valueOf(action[1]));
             symbolSt.push(nextSymbol);
+            System.out.println("移进:" + nextSymbol);
             break;
           } else {
             // 3.2规约
@@ -233,7 +243,7 @@ public class SyntaxAnalyzer {
                 stateSt.pop();
                 symbolSt.pop();
               }
-              System.out.print(curProduction[i]);
+              System.out.print(curProduction[i] + " ");
             }
             System.out.println();
             symbolSt.push(curProduction[0]);
@@ -249,7 +259,7 @@ public class SyntaxAnalyzer {
       if (testnum[i])
         used++;
     }
-    System.out.println("used:" + used);
+    // System.out.println("used:" + used);
     fin.close();
     FileReader.close();
   }
@@ -407,7 +417,7 @@ public class SyntaxAnalyzer {
           break;
         }
       }
-      if (j < set.size()) {
+      if (j >= set.size()) {
         return i;
       }
     }

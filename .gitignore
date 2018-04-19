@@ -1,4 +1,7 @@
 /.settings
 /.classpath
 /.project
-/bin
+/bin/SyntaxResult.txt
+/bin/myCpp_sym.txt
+/bin/myCpp_token.txt
+/bin/com/

@@ -1,0 +1,64 @@
+Start->StartS
+StartS->DeclareS StartS
+StartS->AssignS StartS
+StartS->IfS StartS
+StartS->WhileS StartS
+StartS->TranS StartS
+StartS->@null
+TranS->return Expr ;
+DeclareS->Type Idlist ;
+Idlist->Id1
+Idlist->Id2
+Idlist->Id1 , Idlist
+Idlist->Id2 , Idlist
+Id1->id
+Id2->id = Expr
+AssignS->id = Expr ;
+Expr->Expr + Expr1
+Expr->Expr - Expr1
+Expr->Expr1
+Expr1->Expr1 * Expr2
+Expr1->Expr1 / Expr2
+Expr1->Expr2
+Expr2->( Expr )
+Expr2->id
+Expr2->Const
+BoolE->BoolE1
+BoolE->BoolE || BoolE1
+BoolE1->BoolE2
+BoolE1->BoolE1 && BoolE2
+BoolE2->BoolE3
+BoolE2->! BoolE3
+BoolE3->( BoolE )
+BoolE3->CondE
+CondE->Expr Condop Expr
+IfS->if ( BoolE ) { StartS }
+IfS->if ( BoolE ) { StartS } else { StartS }
+IfS->if ( BoolE ) { StartS } else IfS
+WhileS->while ( BoolE ) { SpecS }
+SpecS->DeclareS SpecS
+SpecS->AssignS SpecS
+SpecS->SpecIfS SpecS
+SpecS->WhileS SpecS
+SpecS->TranS SpecS
+SpecS->@null
+SpecS->break ; SpecS
+SpecS->continue ; SpecS
+SpecIfS->if ( BoolE ) { SpecS }
+SpecIfS->if ( BoolE ) { SpecS } else { SpecS }
+SpecIfS->if ( BoolE ) { SpecS } else SpecIfS
+Condop->>
+Condop->>=
+Condop-><
+Condop-><=
+Condop->=
+Condop->==
+Condop->!=
+Const->intConst
+Const->floatConst
+Const->stringConst
+Const->charConst
+Type->int
+Type->float
+Type->string
+Type->char

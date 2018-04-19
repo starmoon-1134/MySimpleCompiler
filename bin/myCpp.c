@@ -1,4 +1,10 @@
-int a , b = 1;
+int main(int a,float b){
+	int a[4];
+	b(jjj);
+	return a[3];
+}
+
+/* int a , b = 1;
 int b = 1, a  ;
 string c="Sj";
 char ch='i';
@@ -7,10 +13,13 @@ while(a==1){
 	if(a>1){
 		a=1;
 	}
+	break;
 	if(a>1&&b!=1){
 		a=1;
+		continue;
 	}else{
 		a=1;
+		break;
 	}
 	if(a!=1||a==b){
 		a=1;
@@ -32,8 +41,9 @@ while(a==1){
 	a=a-1;
 	while(!a<1){
 		a=1;
+		break;
 	}
-}
+} */
 
 /* int a = b + 1;
 while(a==0){
