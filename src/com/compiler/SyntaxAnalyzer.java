@@ -44,7 +44,7 @@ public class SyntaxAnalyzer {
     System.setOut(printStream);
     System.setErr(printStream);
 
-    getProductions(MainClass.class.getResource("/").getFile() + "production_e.txt");
+    getProductions(MainClass.productionFileNameString);
     /* 登记语法变量 */
     int i, j;
     syntaxVariables = new ArrayList<>();
@@ -141,19 +141,44 @@ public class SyntaxAnalyzer {
 
     }
     /* 构造action表和goto表 */
+    int isConflict = 0;
     for (i = 0; i < closureOfItemSets.size(); i++) {
       curClosure = closureOfItemSets.get(i);
       for (Item curItem : curClosure) {
         String[] curProduction = productions[curItem.pro_index];
         if (isReducItem(curItem, curProduction)) {
           // 1.规约项目
-          actionTable.get(i).set(terminals.indexOf(curItem.lookahead), "r:" + curItem.pro_index);
           if (curItem.equals(new Item(0, 2, "@end"))) {
+            if (actionTable.get(i).get(terminals.indexOf(curItem.lookahead)) != null
+                && !actionTable.get(i).get(terminals.indexOf(curItem.lookahead)).equals("@acc")) {
+              System.out.println("conflict:" + isConflict
+                  + actionTable.get(i).get(terminals.indexOf(curItem.lookahead)) + "->@acc");
+              isConflict++;
+            }
             actionTable.get(i).set(terminals.indexOf(curItem.lookahead), "@acc");
+          } else {
+            if (actionTable.get(i).get(terminals.indexOf(curItem.lookahead)) != null
+                && !actionTable.get(i).get(terminals.indexOf(curItem.lookahead))
+                    .equals("r:" + curItem.pro_index)) {
+              System.out.println("conflict:" + isConflict
+                  + actionTable.get(i).get(terminals.indexOf(curItem.lookahead)) + "->r:"
+                  + curItem.pro_index);
+              isConflict++;
+            }
+            actionTable.get(i).set(terminals.indexOf(curItem.lookahead), "r:" + curItem.pro_index);
           }
         } else if (terminals.contains(curProduction[curItem.nextSymbol_index])) {
           // 2.移进项目
           int nextState = transfer.get(i + ":" + curProduction[curItem.nextSymbol_index]);
+          if (actionTable.get(i)
+              .get(terminals.indexOf(curProduction[curItem.nextSymbol_index])) != null
+              && !actionTable.get(i).get(terminals.indexOf(curProduction[curItem.nextSymbol_index]))
+                  .equals("s:" + nextState)) {
+            System.out.println("conflict:" + isConflict
+                + actionTable.get(i).get(terminals.indexOf(curProduction[curItem.nextSymbol_index]))
+                + "->s:" + nextState);
+            isConflict++;
+          }
           actionTable.get(i).set(terminals.indexOf(curProduction[curItem.nextSymbol_index]),
               "s:" + nextState);
         } else {
@@ -164,6 +189,8 @@ public class SyntaxAnalyzer {
         }
       }
     }
+
+    System.out.println("isConflict:" + isConflict);
 
     int repeat = 0;
     for (i = 0; i < closureOfItemSets.size(); i++) {
@@ -269,7 +296,7 @@ public class SyntaxAnalyzer {
     int i, j;
     for (i = 0; i < closureOfItemSets.size(); i++) {
       TreeSet<Item> curClosure = closureOfItemSets.get(i);
-      System.out.println("I" + i + ":");
+      System.out.println("I" + i + ": " + curClosure.size());
       for (Item curItem : curClosure) {
         String[] curProduction = productions[curItem.pro_index];
         System.out.print(curProduction[0] + "->");

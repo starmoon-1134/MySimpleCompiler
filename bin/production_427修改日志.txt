@@ -1,0 +1,3 @@
+MainDef->int main ( M0 ParaList ) { Sen return Expr ; }
+FuncDef->Type id ( M0 ParaList ) { Sen return Expr ; }
+删除   ID2->id = Expr，不支持初始化

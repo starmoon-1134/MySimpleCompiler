@@ -1,0 +1,92 @@
+S->Start
+Start->MainDef
+Start->FuncList MainDef
+Start->DeclareS Start
+MainDef->int main ( M0 ParaList ) { Sen return Expr ; }
+FuncList->FuncList FuncDef
+FuncList->FuncDef
+FuncDef->Type id ( M1 ParaList ) { Sen return Expr ; }
+ParaList->@null
+ParaList->Type id
+ParaList->Type id , ParaList1
+ParaList1->Type id
+ParaList1->Type id , ParaList1
+Sen->DeclareS Sen
+Sen->AssignS Sen
+Sen->ifS Sen
+Sen->whileS Sen
+Sen->id ( CallParaList ) ; Sen
+Sen->@null
+CallParaList->@null
+CallParaList->Expr
+CallParaList->Expr , CallParaList1
+CallParaList1->Expr
+CallParaList1->Expr , CallParaList1
+DeclareS->Type IDlist ;
+IDlist->ID1
+IDlist->ID2
+IDlist->ID3
+IDlist->ID1 , IDlist
+IDlist->ID2 , IDlist
+IDlist->ID3 , IDlist
+ID1->id
+ID2->id = Expr
+ID3->id [ intConst ]
+AssignS->id = Expr ;
+Expr->Expr + Expr1
+Expr->Expr - Expr1
+Expr->Expr1
+Expr1->Expr1 * Expr2
+Expr1->Expr1 / Expr2
+Expr1->Expr2
+Expr2->( Expr )
+Expr2->id
+Expr2->Const
+Expr2->id [ Expr ]
+BoolE->BoolE1
+BoolE->BoolE || BoolE1
+BoolE1->BoolE2
+BoolE1->BoolE1 && BoolE2
+BoolE2->BoolE3
+BoolE2->! BoolE3
+BoolE3->( BoolE )
+BoolE3->Expr Condop Expr
+ifS->if ( BoolE ) { ifSen }
+ifS->if ( BoolE ) { ifSen } else { ifSen }
+ifS->if ( BoolE ) { ifSen } else ifS
+ifSen->Sen
+ifSen->Sen return Expr ;
+whileS->while ( BoolE ) { CirSen }
+CirSen->DeclareS CirSen
+CirSen->AssignS CirSen
+CirSen->CirifS CirSen
+CirSen->whileS CirSen
+CirSen->return Expr ;
+CirSen->break ;
+CirSen->continue ;
+CirSen->id ( CallParaList ) ; CirSen
+CirSen->@null
+CirifS->if ( BoolE ) { CirSen }
+CirifS->if ( BoolE ) { CirSen } else { CirSen }
+CirifS->if ( BoolE ) { CirSen } else CirifS
+Condop->>
+Condop->>=
+Condop-><
+Condop-><=
+Condop->=
+Condop->==
+Condop->!=
+Const->intConst
+Const->stringConst
+Const->floatConst
+Const->charConst
+Type->int
+Type->float
+Type->string
+Type->char
+M0->@null
+M1->@null
+M2->@null
+M3->@null
+M4->@null
+M5->@null

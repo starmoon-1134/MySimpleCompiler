@@ -4,15 +4,21 @@ import java.io.IOException;
 
 public class MainClass {
   static String sourceFileNameString = null;
+  static String productionFileNameString = null;
+  static String tokenFileNameString = null;
+  static String symbolFileNameString = null;
 
   public static void main(String[] args) throws IOException {
     // TODO 自动生成的方法存根
     // System.out.println(MainClass.class.getResource("/"));
 
     sourceFileNameString = MainClass.class.getResource("/").getFile() + "myCpp.c";
+    productionFileNameString = MainClass.class.getResource("/").getFile() + "production_427.txt";
+    tokenFileNameString = MainClass.class.getResource("/").getFile() + "myCpp_token.txt";
+    symbolFileNameString = MainClass.class.getResource("/").getFile() + "myCpp_sym.txt";
     LexicalAnalyzer.getToken(sourceFileNameString);
     SyntaxAnalyzer test = new SyntaxAnalyzer();
-    test.startAnalyse(MainClass.class.getResource("/").getFile() + "myCpp_token.txt");
+    test.startAnalyse(tokenFileNameString);
 
     // HashSet<Item> a1 = new HashSet<>();
     // HashSet<Item> a2 = new HashSet<>();
