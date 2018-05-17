@@ -1,12 +1,9 @@
 package com.compiler;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.HashSet;
@@ -39,10 +36,10 @@ public class SyntaxAnalyzer {
 
   public SyntaxAnalyzer() throws IOException
   {
-    PrintStream printStream = new PrintStream(new FileOutputStream(
-        new File(MainClass.class.getResource("/").getFile() + "SyntaxResult.txt"), false));
-    System.setOut(printStream);
-    System.setErr(printStream);
+    // PrintStream printStream = new PrintStream(new FileOutputStream(
+    // new File(MainClass.class.getResource("/").getFile() + "SyntaxResult.txt"), false));
+    // System.setOut(printStream);
+    // System.setErr(printStream);
 
     getProductions(MainClass.productionFileNameString);
     /* 登记语法变量 */
@@ -190,50 +187,53 @@ public class SyntaxAnalyzer {
       }
     }
 
-    System.out.println("isConflict:" + isConflict);
-
-    int repeat = 0;
-    for (i = 0; i < closureOfItemSets.size(); i++) {
-      for (j = 0; j < closureOfItemSets.size(); j++) {
-        if (i == j)
-          continue;
-        TreeSet<Item> ci = closureOfItemSets.get(i);
-        TreeSet<Item> cj = closureOfItemSets.get(j);
-        if (ci.size() > cj.size()) {
-          continue;
-        }
-        int ttttt = 1;
-        for (Item item : ci) {
-          if (!cj.contains(item)) {
-            ttttt = 0;
-            break;
-          }
-        }
-        if (ttttt == 1) {
-          System.out.println(j + "包含" + i);
-          repeat++;
-        }
-      }
-    }
-    System.out.println("repeat:" + repeat);
-    int itemCount = 0;
-    for (i = 0; i < closureOfItemSets.size(); i++) {
-      itemCount += closureOfItemSets.get(i).size();
-    }
-    System.out.println("ItemCount:" + itemCount);
-
-    // printProductions();
-    printTableAndSet();
-    System.setOut(System.out);
-    System.setErr(System.err);
+    // System.out.println("isConflict:" + isConflict);
+    //
+    // int repeat = 0;
+    // for (i = 0; i < closureOfItemSets.size(); i++) {
+    // for (j = 0; j < closureOfItemSets.size(); j++) {
+    // if (i == j)
+    // continue;
+    // TreeSet<Item> ci = closureOfItemSets.get(i);
+    // TreeSet<Item> cj = closureOfItemSets.get(j);
+    // if (ci.size() > cj.size()) {
+    // continue;
+    // }
+    // int ttttt = 1;
+    // for (Item item : ci) {
+    // if (!cj.contains(item)) {
+    // ttttt = 0;
+    // break;
+    // }
+    // }
+    // if (ttttt == 1) {
+    // System.out.println(j + "包含" + i);
+    // repeat++;
+    // }
+    // }
+    // }
+    // System.out.println("repeat:" + repeat);
+    // int itemCount = 0;
+    // for (i = 0; i < closureOfItemSets.size(); i++) {
+    // itemCount += closureOfItemSets.get(i).size();
+    // }
+    // System.out.println("ItemCount:" + itemCount);
+    //
+    // // printProductions();
+    // printTableAndSet();
+    // System.setOut(System.out);
+    // System.setErr(System.err);
   }
 
   public void startAnalyse(String tokenFileName) throws IOException {
     boolean[] testnum = new boolean[416];
+    SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(productions);
     FileReader FileReader = new FileReader(tokenFileName);
     BufferedReader fin = new BufferedReader(FileReader);
     Stack<Integer> stateSt = new Stack<>();
     Stack<String> symbolSt = new Stack<>();
+    Stack<String> typeSt = semanticAnalyzer.getTypeSt(); // 用于语意分析
+    Stack<String> valueSt = semanticAnalyzer.getValueSt();// 用于语意分析
     stateSt.push(0);
     symbolSt.push("@end");
     String curLine;
@@ -250,6 +250,7 @@ public class SyntaxAnalyzer {
         } else if (curActionString.equals("@acc")) {
           // 2.接受
           System.out.println("acc");
+          semanticAnalyzer.executeAction(0);// 结束，导出汇编代码
           break;
         } else {
           // 3.移进或规约
@@ -260,6 +261,12 @@ public class SyntaxAnalyzer {
             stateSt.push(Integer.valueOf(action[1]));
             symbolSt.push(nextSymbol);
             System.out.println("移进:" + nextSymbol);
+            if (!tmpStrings[1].equals("_")) {
+              valueSt.push(tmpStrings[1]);
+            } else if (tmpStrings[0].equals("int") || tmpStrings[0].equals("float")
+                || tmpStrings[0].equals("char")) {
+              typeSt.push(tmpStrings[0]);
+            }
             break;
           } else {
             // 3.2规约
@@ -273,6 +280,7 @@ public class SyntaxAnalyzer {
               System.out.print(curProduction[i] + " ");
             }
             System.out.println();
+            semanticAnalyzer.executeAction(Integer.valueOf(action[1]));
             symbolSt.push(curProduction[0]);
             stateSt
                 .push(gotoTable.get(stateSt.peek()).get(syntaxVariables.indexOf(symbolSt.peek())));

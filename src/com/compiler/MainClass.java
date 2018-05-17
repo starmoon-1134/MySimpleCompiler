@@ -7,6 +7,7 @@ public class MainClass {
   static String productionFileNameString = null;
   static String tokenFileNameString = null;
   static String symbolFileNameString = null;
+  static String asmFileNameString = null;
 
   public static void main(String[] args) throws IOException {
     // TODO 自动生成的方法存根
@@ -16,6 +17,7 @@ public class MainClass {
     productionFileNameString = MainClass.class.getResource("/").getFile() + "production_427.txt";
     tokenFileNameString = MainClass.class.getResource("/").getFile() + "myCpp_token.txt";
     symbolFileNameString = MainClass.class.getResource("/").getFile() + "myCpp_sym.txt";
+    asmFileNameString = MainClass.class.getResource("/").getFile() + "myCpp.s";
     LexicalAnalyzer.getToken(sourceFileNameString);
     SyntaxAnalyzer test = new SyntaxAnalyzer();
     test.startAnalyse(tokenFileNameString);
