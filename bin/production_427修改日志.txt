@@ -15,3 +15,24 @@ FuncDef->Type id ( M0 ParaList ) { Sen return Expr ; }
 	ParaList1->Type ParaID , ParaList1
 	ParaID->id	
 2.  删除  Type->string
+
+5.18 
+1.	删除Sen->id ( CallParaList ) ; Sen
+	删除CirSen->id ( CallParaList ) ; CirSen
+	增加Sen->CallS Sen
+	增加CirSen->CallS CirSen
+	增加CallS->id ( M2 CallParaList ) ;
+	增加Expr2->id ( M2 CallParaList )
+2.  
+	CallParaList->@null
+	CallParaList->Expr
+	CallParaList->Expr , CallParaList1
+	CallParaList1->Expr
+	CallParaList1->Expr , CallParaList1
+	替换为：
+	CallParaList->@null
+	CallParaList->CallExpr
+	CallParaList->CallExpr , CallParaList1
+	CallParaList1->CallExpr
+	CallParaList1->CallExpr , CallParaList1
+	CallExpr->Expr

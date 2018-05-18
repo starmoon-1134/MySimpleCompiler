@@ -1,9 +1,15 @@
 char ch;
 int c,s;
 
-int main(int a,float b){
+int test(int i){
+	return 0;
+}
+
+int main(){
+	float fff;
+	fff = 3.0;
 	ch = '\n';
-	c = a;
+	printf("%f",fff);
 	return 0;
 }
 

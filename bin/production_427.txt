@@ -16,13 +16,14 @@ Sen->DeclareS Sen
 Sen->AssignS Sen
 Sen->ifS Sen
 Sen->whileS Sen
-Sen->id ( CallParaList ) ; Sen
+Sen->CallS Sen
 Sen->@null
 CallParaList->@null
-CallParaList->Expr
-CallParaList->Expr , CallParaList1
-CallParaList1->Expr
-CallParaList1->Expr , CallParaList1
+CallParaList->CallExpr
+CallParaList->CallExpr , CallParaList1
+CallParaList1->CallExpr
+CallParaList1->CallExpr , CallParaList1
+CallExpr->Expr
 DeclareS->Type IDlist ;
 IDlist->ID1
 IDlist->ID2
@@ -44,6 +45,7 @@ Expr2->( Expr )
 Expr2->id
 Expr2->Const
 Expr2->id [ Expr ]
+Expr2->id ( M2 CallParaList )
 BoolE->BoolE1
 BoolE->BoolE || BoolE1
 BoolE1->BoolE2
@@ -58,14 +60,15 @@ ifS->if ( BoolE ) { ifSen } else ifS
 ifSen->Sen
 ifSen->Sen return Expr ;
 whileS->while ( BoolE ) { CirSen }
+CallS->id ( M2 CallParaList ) ;
 CirSen->DeclareS CirSen
 CirSen->AssignS CirSen
 CirSen->CirifS CirSen
 CirSen->whileS CirSen
+CirSen->CallS CirSen
 CirSen->return Expr ;
 CirSen->break ;
 CirSen->continue ;
-CirSen->id ( CallParaList ) ; CirSen
 CirSen->@null
 CirifS->if ( BoolE ) { CirSen }
 CirifS->if ( BoolE ) { CirSen } else { CirSen }

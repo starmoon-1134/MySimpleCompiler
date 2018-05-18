@@ -8,6 +8,7 @@ public class SignTable {
   private SignTable parentTable;
   private ArrayList<Sign> table;
   private StringBuffer Sentence;
+  public int maxParaSize;// 当前块内最大的参数列表尺寸
 
   public SignTable()
   {
@@ -41,19 +42,28 @@ public class SignTable {
     return "-1:-1:-1";
   }
 
-  // public Sign getSignByIdName(String idName) {
-  // String retString;
-  // SignTable curTable = this;
-  // while (curTable != null) {
-  // for (Sign sign : curTable.table) {
-  // if (sign.id.equals(idName)) {
-  // return sign;
-  // }
-  // }
-  // curTable = curTable.getParentTable();
-  // }
-  // return null;
-  // }
+  public Sign getSignByIdName(String idName) {
+    String retString;
+    SignTable curTable = this;
+    while (curTable != null) {
+      for (Sign sign : curTable.table) {
+        if (sign.id.equals(idName)) {
+          return sign;
+        }
+      }
+      curTable = curTable.getParentTable();
+    }
+    return null;
+  }
+
+  public boolean isFuncRepeate(String funcName) {
+    for (Sign sign : this.table) {
+      if (sign.id.equals(funcName)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   public boolean add(Sign sign) {
     return table.add(sign);

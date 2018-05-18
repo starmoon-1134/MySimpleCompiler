@@ -1,25 +1,40 @@
 .section .data
-.byte '\0','\0','\0','\0'
-.int 0
-.int 0
-0_const: .byte '\n'
-1_const: .int 0
+_ch: .byte '\0'
+     .byte '\0','\0','\0'
+_c: .int 0
+_s: .int 0
+__0_const: .int 0
+__1_const: .float 3.0
+__2_const: .byte '\n'
+__3_const: .asciz "%f"
+__4_const: .int 0
 
 .section .text
 
-.globl _main
-_main
+.globl _test
+_test:
     pushl %ebx
     movl %esp, %ebp
-    xor %ebx,%ebx
-    xor %eax,%eax
-    movb -20(%ebx),%al
-    movb %al,0(%ebx)
-    movl 8(%ebp),%eax
-    xor %ebx,%ebx
-    movl %eax,-6(%ebx)
-    xor %ebx,%ebx
-    xor %eax,%eax
-    movl -21(%ebx),%eax
+    sub $0,%esp
+    movl $__0_const,%ebx
+    movl (%ebx),%eax
+    leave
+    ret
+
+.globl _main
+_main:
+    pushl %ebx
+    movl %esp, %ebp
+    sub $16,%esp
+    movl $__1_const,%ebx
+    movl (%ebx),%eax
+    movl %eax,0(%ebp)
+    movl $__3_const,%ebx
+    movl %ebx,0(%esp)
+    flds 0(%ebp)
+    fstpl 4(%esp)
+    call _printf
+    movl $__4_const,%ebx
+    movl (%ebx),%eax
     leave
     ret
