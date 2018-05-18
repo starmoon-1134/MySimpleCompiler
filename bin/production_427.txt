@@ -7,10 +7,11 @@ FuncList->FuncList FuncDef
 FuncList->FuncDef
 FuncDef->Type id ( M1 ParaList ) { Sen return Expr ; }
 ParaList->@null
-ParaList->Type id
-ParaList->Type id , ParaList1
-ParaList1->Type id
-ParaList1->Type id , ParaList1
+ParaList->Type ParaID
+ParaList->Type ParaID , ParaList1
+ParaList1->Type ParaID
+ParaList1->Type ParaID , ParaList1
+ParaID->id
 Sen->DeclareS Sen
 Sen->AssignS Sen
 Sen->ifS Sen
@@ -82,7 +83,6 @@ Const->floatConst
 Const->charConst
 Type->int
 Type->float
-Type->string
 Type->char
 M0->@null
 M1->@null

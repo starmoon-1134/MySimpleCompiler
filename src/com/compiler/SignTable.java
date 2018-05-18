@@ -20,7 +20,9 @@ public class SignTable {
   }
 
   /*
-   * 返回字符串的3部分依次为： 是否为全局变量; 变量类型; 偏移
+   * 返回字符串的3部分依次为： 是否为局部变量(及参数); 变量类型;偏移
+   * 
+   * 不直接返回一个Sign的原因：Sign内部没有标记自身是全局的 还是局部的
    */
   public String getOffsetOfID(String idName) {
     String retString;
@@ -38,6 +40,20 @@ public class SignTable {
     }
     return "-1:-1:-1";
   }
+
+  // public Sign getSignByIdName(String idName) {
+  // String retString;
+  // SignTable curTable = this;
+  // while (curTable != null) {
+  // for (Sign sign : curTable.table) {
+  // if (sign.id.equals(idName)) {
+  // return sign;
+  // }
+  // }
+  // curTable = curTable.getParentTable();
+  // }
+  // return null;
+  // }
 
   public boolean add(Sign sign) {
     return table.add(sign);
@@ -85,7 +101,7 @@ public class SignTable {
    *          要设置的 localOffset
    */
   public void addLocalOffset(int localOffset) {
-    this.localOffset += localOffset;
+    this.localOffset -= localOffset;
   }
 
   /**

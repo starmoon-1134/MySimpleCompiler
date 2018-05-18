@@ -1,3 +1,17 @@
 MainDef->int main ( M0 ParaList ) { Sen return Expr ; }
 FuncDef->Type id ( M0 ParaList ) { Sen return Expr ; }
 删除   ID2->id = Expr，不支持初始化
+
+5.12:
+
+1.	ParaList->Type id
+	ParaList->Type id , ParaList1
+	ParaList1->Type id
+	ParaList1->Type id , ParaList1
+	替换为：
+	ParaList->Type ParaID
+	ParaList->Type ParaID , ParaList1
+	ParaList1->Type ParaID
+	ParaList1->Type ParaID , ParaList1
+	ParaID->id	
+2.  删除  Type->string

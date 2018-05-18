@@ -1,15 +1,10 @@
 char ch;
 int c,s;
 
-float test(){
-	return 3.0;
-}
-
 int main(int a,float b){
 	ch = '\n';
-	int a[4];
-	b(jjj);
-	return a[3];
+	c = a;
+	return 0;
 }
 
 /* int a , b = 1;

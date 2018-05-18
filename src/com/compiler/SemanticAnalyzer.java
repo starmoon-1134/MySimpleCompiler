@@ -80,10 +80,10 @@ public class SemanticAnalyzer {
       } else {// 局部变量
         switch (posOfExpr[1]) {
           case "char":
-            curTable.addSentence("    movb -" + posOfExpr[2] + "(%ebp),%al\n");
+            curTable.addSentence("    movb " + posOfExpr[2] + "(%ebp),%al\n");
             break;
           default:
-            curTable.addSentence("    movl -" + posOfExpr[2] + "(%ebp),%eax\n");
+            curTable.addSentence("    movl " + posOfExpr[2] + "(%ebp),%eax\n");
             break;
         }
       }
@@ -100,22 +100,22 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("ParaList->@null")) {
 
-    } else if (curString.equals("ParaList->Type id")) {
+    } else if (curString.equals("ParaList->Type ParaID")) {
       // Sign tmpSign = new Sign(valueSt.pop(), typeSt.peek(), curTable.getPramOffset(), -1, null);
       // curTable.addPramOffset(4);
       // curTable.add(tmpSign);
       // typeSt.pop();
-    } else if (curString.equals("ParaList->Type id , ParaList1")) {
+    } else if (curString.equals("ParaList->Type ParaID , ParaList1")) {
       // Sign tmpSign = new Sign(valueSt.pop(), typeSt.peek(), curTable.getPramOffset(), -1, null);
       // curTable.addPramOffset(4);
       // curTable.add(tmpSign);
       // typeSt.pop();
-    } else if (curString.equals("ParaList1->Type id")) {
+    } else if (curString.equals("ParaList1->Type ParaID")) {
       // Sign tmpSign = new Sign(valueSt.pop(), typeSt.peek(), curTable.getPramOffset(), -1, null);
       // curTable.addPramOffset(4);
       // curTable.add(tmpSign);
       // typeSt.pop();
-    } else if (curString.equals("ParaList1->Type id , ParaList1")) {
+    } else if (curString.equals("ParaList1->Type ParaID , ParaList1")) {
       // Sign tmpSign = new Sign(valueSt.pop(), typeSt.peek(), curTable.getPramOffset(), -1, null);
       // curTable.addPramOffset(4);
       // curTable.add(tmpSign);
@@ -196,7 +196,7 @@ public class SemanticAnalyzer {
     } else if (curString.equals("AssignS->id = Expr ;")) {// 暂把Expr当立即数
       String Expr = valueSt.pop();
       String variable = valueSt.pop();
-
+      mov(Expr, variable);
     } else if (curString.equals("Expr->Expr + Expr1")) {
 
     } else if (curString.equals("Expr->Expr - Expr1")) {
@@ -361,27 +361,68 @@ public class SemanticAnalyzer {
     return valueSt;
   }
 
-  private void movl(String scrE, String desE) {
-    String[] PosOfID = curTable.getOffsetOfID(variable).split(":");
-    if (PosOfID[0].equals("-1")) {
-      System.out.println("使用未定义变量：" + variable);
-    } else if (PosOfID[0].equals("0")) {// 全局变量
+  /*
+   * srcE和desE要在符号表中才能用
+   * 
+   */
+  private void mov(String srcE, String desE) {
+    String[] PosofScr = curTable.getOffsetOfID(srcE).split(":");
+    String[] PosofDes = curTable.getOffsetOfID(desE).split(":");
+    if (PosofScr[0].equals("-1")) {
+      System.out.println("使用未定义变量：" + PosofScr);
+
+    }
+    if (PosofDes[0].equals("-1")) {
+      System.out.println("使用未定义变量：" + PosofDes);
+      return;
+    }
+
+    boolean isBase0 = false;// ebx 做为基址寄存器，是否为0
+
+    // 源变量->EAX
+    if (PosofScr[0].equals("0")) {// 全局变量
       curTable.addSentence("    xor %ebx,%ebx\n");
-      switch (PosOfID[1]) {
+      isBase0 = true;
+      switch (PosofScr[1]) {
         case "char":
-          curTable.addSentence("    movb $" + Expr + "," + PosOfID[2] + "(%ebx)\n");
+        case "charConst":
+          curTable.addSentence("    xor %eax,%eax\n");
+          curTable.addSentence("    movb " + PosofScr[2] + "(%ebx),%al\n");
           break;
         default:
-          curTable.addSentence("    movl $" + Expr + "," + PosOfID[2] + "(%ebx)\n");
+          curTable.addSentence("    movl " + PosofScr[2] + "(%ebx),%eax\n");
           break;
       }
-    } else {// 局部变量
-      switch (PosOfID[1]) {
+    } else {// 局部变量或参数
+      switch (PosofScr[1]) {
         case "char":
-          curTable.addSentence("    movb $" + Expr + ",-" + PosOfID[2] + "(%ebp)\n");
+          curTable.addSentence("    movb " + PosofScr[2] + "(%ebp),%al\n");
           break;
         default:
-          curTable.addSentence("    movl $" + Expr + ",-" + PosOfID[2] + "(%ebp)\n");
+          curTable.addSentence("    movl " + PosofScr[2] + "(%ebp),%eax\n");
+          break;
+      }
+    }
+    // EAX->目的变量
+    if (PosofDes[0].equals("0")) {
+      if (!isBase0) {
+        curTable.addSentence("    xor %ebx,%ebx\n");
+      }
+      switch (PosofDes[1]) {
+        case "char":
+          curTable.addSentence("    movb %al," + PosofDes[2] + "(%ebx)\n");
+          break;
+        default:
+          curTable.addSentence("    movl %eax," + PosofDes[2] + "(%ebx)\n");
+          break;
+      }
+    } else {// 局部变量或参数
+      switch (PosofDes[1]) {
+        case "char":
+          curTable.addSentence("    movb %al," + PosofDes[2] + "(%ebp)\n");
+          break;
+        default:
+          curTable.addSentence("    movl %eax" + PosofDes[2] + "(%ebp)\n");
           break;
       }
     }
