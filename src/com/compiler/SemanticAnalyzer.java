@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Stack;
 
 public class SemanticAnalyzer {
@@ -20,7 +21,7 @@ public class SemanticAnalyzer {
   StringBuffer codeSecBuff;
 
   int constCtn = 0;
-  boolean isPrintf = false;// 当前调用函数是否为printf
+  String curCallFunc;
   boolean isEBX0 = false;// EBX是否为0
   boolean isEAX0 = false;// EAX是否为0
 
@@ -57,8 +58,9 @@ public class SemanticAnalyzer {
       asmFile.write("\n");
       asmFile.write(codeSecBuff.toString());
       asmFile.close();
-      openExe("gcc " + MainClass.asmFileNameString + " -o " + MainClass.exeFileNameString);
-      Desktop.getDesktop().open(new File(MainClass.exeFileNameString));
+      openExe("gcc " + MainClass.asmFileNameString.substring(1) + " -o "
+          + MainClass.exeFileNameString.substring(1));
+      Desktop.getDesktop().open(new File(MainClass.batFileNameString));
       // openExe("cmd /c start" + MainClass.exeFileNameString);
 
     } else if (curString.equals("Start->MainDef")) {
@@ -194,7 +196,7 @@ public class SemanticAnalyzer {
         System.err.println("使用未定义变量:" + paraID);
         return;
       }
-      if (isPrintf && paraSign.type.equals("float")) {
+      if (curCallFunc.equals("printf") && paraSign.type.equals("float")) {
         if (paraSign.isGlobal) {
           curTable.addSentence("    flds " + paraSign.id + "\n");
         } else {
@@ -202,13 +204,21 @@ public class SemanticAnalyzer {
         }
         curTable.addSentence("    fstpl " + paraSize.peek() + "(%esp)\n");
         paraSize.push(paraSize.pop() + 8);
+      } else if (curCallFunc.equals("scanf")) {
+        if (paraSign.isGlobal) {
+          curTable.addSentence("    movl $" + paraSign.id + ",%ebx\n");
+        } else {
+          curTable.addSentence("    movl " + paraSign.offset + "(%ebp),%ebx\n");
+        }
+        curTable.addSentence("    movl %ebx," + paraSize.peek() + "(%esp)\n");
+        paraSize.push(paraSize.pop() + 4);
       } else {
         if (paraSign.isGlobal) {
           curTable.addSentence("    movl $" + paraSign.id + ",%ebx\n");
         } else {
           curTable.addSentence("    movl " + paraSign.offset + "(%ebp),%ebx\n");
         }
-        if (paraSign.type.equals("stringConst")) {/////////////////////////////////////////////
+        if (paraSign.type.equals("charArray")) {/////////////////////////////////////////////
           curTable.addSentence("    movl %ebx," + paraSize.peek() + "(%esp)\n");
         } else {
           curTable.addSentence("    movl (%ebx),%eax\n");
@@ -232,49 +242,13 @@ public class SemanticAnalyzer {
     } else if (curString.equals("IDlist->ID3 , IDlist")) {
       // typeSt.push(typeSt.peek()); 511
     } else if (curString.equals("ID1->id")) {
-      int sizeOFid = typeSt.peek().equals("char") ? 1 : 4;
-
-      if (curTable == globalSignTable) {// 全局变量
-        int offset = globalSignTable.getPramOffset();
-        if (sizeOFid == 4 && offset % 4 != 0) {
-          // 如果之前变量是char，进行4字节对齐
-          int chip = 4 - offset % 4;
-          globalSignTable.addPramOffset(chip);
-          dataSecBuff.append("     .byte '\\0'");
-          for (int i = 1; i < chip; i++) {
-            dataSecBuff.append(",'\\0'");
-          }
-          dataSecBuff.append("\n");
-        }
-        Sign tmpSign = new Sign("_" + valueSt.pop(), typeSt.peek(), globalSignTable.getPramOffset(),
-            -1, null, true);
-        globalSignTable.addPramOffset(sizeOFid);
-        globalSignTable.add(tmpSign);
-        switch (tmpSign.type) {
-          case "char":
-            dataSecBuff.append(tmpSign.id + ": .byte '\\0'\n");
-            break;
-          case "int":
-            dataSecBuff.append(tmpSign.id + ": .int 0\n");
-            break;
-          case "float":
-            dataSecBuff.append(tmpSign.id + ": .float 0.0\n");
-          default:
-            break;
-        }
-      } else {// 局部变量
-        int offset = curTable.getLocalOffset();
-        if (sizeOFid == 4 && offset % 4 != 0) {
-          // 如果之前变量是char，进行4字节对齐
-          curTable.addLocalOffset(4 - offset % 4);
-        }
-        Sign tmpSign = new Sign(valueSt.pop(), typeSt.peek(), curTable.getLocalOffset(), -1, null,
-            false);
-        curTable.addLocalOffset(sizeOFid);
-        curTable.add(tmpSign);
-      }
+      declareSimVar();
+      valueSt.pop();
     } else if (curString.equals("ID2->id = Expr")) {
-
+      String Expr = valueSt.pop();
+      declareSimVar();
+      String variable = valueSt.pop();
+      movii(Expr, variable);
     } else if (curString.equals("ID3->id [ intConst ]")) {
 
     } else if (curString.equals("AssignS->id = Expr ;")) {
@@ -332,7 +306,7 @@ public class SemanticAnalyzer {
     } else if (curString.equals("whileS->while ( BoolE ) { CirSen }")) {
 
     } else if (curString.equals("CallS->id ( M2 CallParaList ) ;")) {
-      curTable.addSentence("    call _" + valueSt.pop() + "\n");
+      curTable.addSentence("    call _" + valueSt.pop() + "\n\n");
       if (curTable.maxParaSize < paraSize.peek()) {
         curTable.maxParaSize = paraSize.peek();
       }
@@ -397,7 +371,7 @@ public class SemanticAnalyzer {
     } else if (curString.equals("Const->stringConst")) {
       String tmpID = "__" + constCtn + "_const";
       constCtn++;
-      Sign sign = new Sign(tmpID, "stringConst", globalSignTable.getPramOffset(), -1, null, true);
+      Sign sign = new Sign(tmpID, "charArray", globalSignTable.getPramOffset(), -1, null, true);
       globalSignTable.addPramOffset(valueSt.peek().length() + 1);
       globalSignTable.add(sign);
       dataSecBuff.append(tmpID + ": .asciz \"" + valueSt.pop() + "\"\n");
@@ -456,9 +430,8 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("M2->@null")) {// 调用函数前确认是否为printf
       paraSize.push(0);
-      if (valueSt.peek().equals("printf")) {
-        isPrintf = true;
-      }
+      curCallFunc = valueSt.peek();
+      curTable.addSentence("#调用函数:" + curCallFunc + "\n");
     } else if (curString.equals("M3->@null")) {
 
     } else if (curString.equals("M4->@null")) {
@@ -549,16 +522,72 @@ public class SemanticAnalyzer {
 
   };
 
+  private void declareSimVar() {
+    int sizeOFid = typeSt.peek().equals("char") ? 1 : 4;
+    if (curTable == globalSignTable) {// 全局变量
+      int offset = globalSignTable.getPramOffset();
+      if (sizeOFid == 4 && offset % 4 != 0) {
+        // 如果之前变量是char，进行4字节对齐
+        int chip = 4 - offset % 4;
+        globalSignTable.addPramOffset(chip);
+        dataSecBuff.append("     .byte '\\0'");
+        for (int i = 1; i < chip; i++) {
+          dataSecBuff.append(",'\\0'");
+        }
+        dataSecBuff.append("\n");
+      }
+      Sign tmpSign = new Sign(valueSt.peek(), typeSt.peek(), globalSignTable.getPramOffset(), -1,
+          null, true);
+      globalSignTable.addPramOffset(sizeOFid);
+      globalSignTable.add(tmpSign);
+      switch (tmpSign.type) {
+        case "char":
+          dataSecBuff.append(tmpSign.id + ": .byte '\\0'\n");
+          break;
+        case "int":
+          dataSecBuff.append(tmpSign.id + ": .int 0\n");
+          break;
+        case "float":
+          dataSecBuff.append(tmpSign.id + ": .float 0.0\n");
+        default:
+          break;
+      }
+    } else {// 局部变量
+      int offset = curTable.getLocalOffset();
+      if (sizeOFid == 4 && offset % 4 != 0) {
+        // 如果之前变量是char，进行4字节对齐
+        curTable.addLocalOffset(4 - offset % 4);
+      }
+      Sign tmpSign = new Sign(valueSt.peek(), typeSt.peek(), curTable.getLocalOffset(), -1, null,
+          false);
+      curTable.addLocalOffset(sizeOFid);
+      curTable.add(tmpSign);
+    }
+  }
+
   private void openExe(String param) {
     final Runtime runtime = Runtime.getRuntime();
     Process process = null;
     System.out.println(param);
     try {
       process = runtime.exec(param);
-      process.waitFor();
-    } catch (final Exception e) {
+
+    } catch (final IOException e) {
       e.printStackTrace();
     }
+    try {
+      process.waitFor();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    byte[] out = new byte[4096];
+    OutputStream exeout = process.getOutputStream();
+    try {
+      exeout.write(out, 0, 4096);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    System.err.println(new String(out));
   }
 
 }

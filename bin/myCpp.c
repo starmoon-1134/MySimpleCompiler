@@ -6,9 +6,9 @@ int test(int i){
 }
 
 int main(){
-	float fff;
-	fff = 3.0;
-	ch = '\n';
+	float fff=3.0;
+	scanf("%c",ch);
+	printf("%c\n",ch);
 	printf("%f",fff);
 	return 0;
 }

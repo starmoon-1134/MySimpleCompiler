@@ -225,7 +225,7 @@ public class SyntaxAnalyzer {
     // System.setErr(System.err);
   }
 
-  public void startAnalyse(String tokenFileName) throws IOException {
+  public void startAnalyse(String tokenFileName) throws IOException, InterruptedException {
     boolean[] testnum = new boolean[416];
     SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(productions);
     FileReader FileReader = new FileReader(tokenFileName);

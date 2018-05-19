@@ -1,13 +1,15 @@
 .section .data
-_ch: .byte '\0'
+ch: .byte '\0'
      .byte '\0','\0','\0'
-_c: .int 0
-_s: .int 0
+c: .int 0
+s: .int 0
 __0_const: .int 0
 __1_const: .float 3.0
-__2_const: .byte '\n'
-__3_const: .asciz "%f"
-__4_const: .int 0
+__2_const: .asciz "%c"
+__3_const: .asciz "%c\n"
+__4_const: .asciz "%f"
+   .byte '\0'
+__5_const: .int 0
 
 .section .text
 
@@ -29,12 +31,29 @@ _main:
     movl $__1_const,%ebx
     movl (%ebx),%eax
     movl %eax,0(%ebp)
+#调用函数:scanf
+    movl $__2_const,%ebx
+    movl %ebx,0(%esp)
+    movl $ch,%ebx
+    movl %ebx,4(%esp)
+    call _scanf
+
+#调用函数:printf
     movl $__3_const,%ebx
+    movl %ebx,0(%esp)
+    movl $ch,%ebx
+    movl (%ebx),%eax
+    movl %eax,4(%esp)
+    call _printf
+
+#调用函数:printf
+    movl $__4_const,%ebx
     movl %ebx,0(%esp)
     flds 0(%ebp)
     fstpl 4(%esp)
     call _printf
-    movl $__4_const,%ebx
+
+    movl $__5_const,%ebx
     movl (%ebx),%eax
     leave
     ret
