@@ -1,15 +1,17 @@
 .section .data
-ch: .byte '\0'
-     .byte '\0','\0','\0'
-c: .int 0
-s: .int 0
+ch: .space 1
+dddd: .space 5
+ .space 2#碎片填充  
+c: .space 4
+s: .space 4
 __0_const: .int 0
 __1_const: .float 3.0
 __2_const: .asciz "%c"
 __3_const: .asciz "%c\n"
 __4_const: .asciz "%f"
-   .byte '\0'
-__5_const: .int 0
+__5_const: .asciz "s  %d"
+ .space 3#碎片填充  
+__6_const: .int 0
 
 .section .text
 
@@ -17,7 +19,7 @@ __5_const: .int 0
 _test:
     pushl %ebx
     movl %esp, %ebp
-    sub $0,%esp
+    sub $4,%esp
     movl $__0_const,%ebx
     movl (%ebx),%eax
     leave
@@ -27,10 +29,9 @@ _test:
 _main:
     pushl %ebx
     movl %esp, %ebp
-    sub $16,%esp
-    movl $__1_const,%ebx
-    movl (%ebx),%eax
-    movl %eax,0(%ebp)
+    sub $24,%esp
+    movl __1_const,%eax
+    movl %eax,-4(%ebp)
 #调用函数:scanf
     movl $__2_const,%ebx
     movl %ebx,0(%esp)
@@ -45,15 +46,26 @@ _main:
     movl (%ebx),%eax
     movl %eax,4(%esp)
     call _printf
+    movl %eax,-8(%ebp)
 
+    movl -8(%ebp),%eax
+    movl %eax,s
 #调用函数:printf
     movl $__4_const,%ebx
     movl %ebx,0(%esp)
-    flds 0(%ebp)
+    flds -4(%ebp)
     fstpl 4(%esp)
     call _printf
 
+#调用函数:printf
     movl $__5_const,%ebx
+    movl %ebx,0(%esp)
+    movl $s,%ebx
+    movl (%ebx),%eax
+    movl %eax,4(%esp)
+    call _printf
+
+    movl $__6_const,%ebx
     movl (%ebx),%eax
     leave
     ret

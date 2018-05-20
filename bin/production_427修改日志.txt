@@ -1,6 +1,5 @@
 MainDef->int main ( M0 ParaList ) { Sen return Expr ; }
 FuncDef->Type id ( M0 ParaList ) { Sen return Expr ; }
-删除   ID2->id = Expr，不支持初始化
 
 5.12:
 
@@ -36,3 +35,13 @@ FuncDef->Type id ( M0 ParaList ) { Sen return Expr ; }
 	CallParaList1->CallExpr
 	CallParaList1->CallExpr , CallParaList1
 	CallExpr->Expr
+
+下一步：
+	完善声明，为Expr、BoolE添加语义
+	
+5.20
+1.  删除  Condop->=
+2.  新增  ParaID->id [ ]  支持传递数组类型的参数
+
+
+ParaID->id [ ]

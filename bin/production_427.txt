@@ -12,6 +12,7 @@ ParaList->Type ParaID , ParaList1
 ParaList1->Type ParaID
 ParaList1->Type ParaID , ParaList1
 ParaID->id
+ParaID->id [ ]
 Sen->DeclareS Sen
 Sen->AssignS Sen
 Sen->ifS Sen
@@ -77,7 +78,6 @@ Condop->>
 Condop->>=
 Condop-><
 Condop-><=
-Condop->=
 Condop->==
 Condop->!=
 Const->intConst

@@ -10,6 +10,7 @@ public class MainClass {
   static String asmFileNameString = null;
   static String exeFileNameString = null;
   static String batFileNameString = null;
+  static String genexeFileNameString = null;
 
   public static void main(String[] args) throws IOException, InterruptedException {
     // TODO 自动生成的方法存根
@@ -22,6 +23,7 @@ public class MainClass {
     asmFileNameString = MainClass.class.getResource("/").getFile() + "myCpp.s";
     exeFileNameString = MainClass.class.getResource("/").getFile() + "myCpp.exe";
     batFileNameString = MainClass.class.getResource("/").getFile() + "myCpp.bat";
+    genexeFileNameString = MainClass.class.getResource("/").getFile() + "genExe.bat";
     LexicalAnalyzer.getToken(sourceFileNameString);
     SyntaxAnalyzer test = new SyntaxAnalyzer();
     test.startAnalyse(tokenFileNameString);

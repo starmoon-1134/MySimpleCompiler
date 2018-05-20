@@ -44,6 +44,8 @@ public class SemanticAnalyzer {
     // symbolReader = new BufferedReader(new FileReader(MainClass.symbolFileNameString));
     dataSecBuff = new StringBuffer(".section .data\n");
     codeSecBuff = new StringBuffer(".section .text\n");
+    curTable.add(new Sign("printf", "int", -1, -1, null, true));
+    curTable.add(new Sign("scanf", "int", -1, -1, null, true));
   }
 
   public void executeAction(int proID) throws IOException {
@@ -58,8 +60,15 @@ public class SemanticAnalyzer {
       asmFile.write("\n");
       asmFile.write(codeSecBuff.toString());
       asmFile.close();
-      openExe("gcc " + MainClass.asmFileNameString.substring(1) + " -o "
-          + MainClass.exeFileNameString.substring(1));
+      // openExe("gcc " + MainClass.asmFileNameString.substring(1) + " -o "
+      // + MainClass.exeFileNameString.substring(1));
+      Desktop.getDesktop().open(new File(MainClass.genexeFileNameString));
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        // TODO 自动生成的 catch 块
+        e.printStackTrace();
+      }
       Desktop.getDesktop().open(new File(MainClass.batFileNameString));
       // openExe("cmd /c start" + MainClass.exeFileNameString);
 
@@ -74,8 +83,7 @@ public class SemanticAnalyzer {
       codeSecBuff.append("_main:\n");
       codeSecBuff.append("    pushl %ebx\n");
       codeSecBuff.append("    movl %esp, %ebp\n");
-      codeSecBuff
-          .append("    sub $" + (-curTable.getLocalOffset() + curTable.maxParaSize) + ",%esp\n");
+      codeSecBuff.append("    sub $" + curTable.getReserveSize() + ",%esp\n");
 
       String Expr = valueSt.pop();
       Sign retSign = curTable.getSignByIdName(Expr);
@@ -122,8 +130,7 @@ public class SemanticAnalyzer {
       codeSecBuff.append("_" + funcName + ":\n");
       codeSecBuff.append("    pushl %ebx\n");
       codeSecBuff.append("    movl %esp, %ebp\n");
-      codeSecBuff
-          .append("    sub $" + (-curTable.getLocalOffset() + curTable.maxParaSize) + ",%esp\n");
+      codeSecBuff.append("    sub $" + curTable.getReserveSize() + ",%esp\n");
 
       if (retSign == null) {
         System.out.println("使用未定义变量：" + Expr);
@@ -189,7 +196,7 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("CallParaList1->CallExpr , CallParaList1")) {
 
-    } else if (curString.equals("CallExpr->Expr")) {
+    } else if (curString.equals("CallExpr->Expr")) {// 在这里需要检查参数信息
       String paraID = valueSt.pop();
       Sign paraSign = curTable.getSignByIdName(paraID);
       if (paraSign == null) {
@@ -250,7 +257,8 @@ public class SemanticAnalyzer {
       String variable = valueSt.pop();
       movii(Expr, variable);
     } else if (curString.equals("ID3->id [ intConst ]")) {
-
+      declareArr();// 内部已将intConst pop掉
+      valueSt.pop();
     } else if (curString.equals("AssignS->id = Expr ;")) {
       String Expr = valueSt.pop();
       String variable = valueSt.pop();
@@ -274,9 +282,9 @@ public class SemanticAnalyzer {
     } else if (curString.equals("Expr2->Const")) {
 
     } else if (curString.equals("Expr2->id [ Expr ]")) {
-
+      Expr2_Arr();
     } else if (curString.equals("Expr2->id ( M2 CallParaList )")) {
-
+      Expr2_Func();
     } else if (curString.equals("BoolE->BoolE1")) {
 
     } else if (curString.equals("BoolE->BoolE || BoolE1")) {
@@ -307,10 +315,9 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("CallS->id ( M2 CallParaList ) ;")) {
       curTable.addSentence("    call _" + valueSt.pop() + "\n\n");
-      if (curTable.maxParaSize < paraSize.peek()) {
-        curTable.maxParaSize = paraSize.peek();
-      }
+      curTable.updateMaxParaSize(paraSize.peek());
       paraSize.pop();
+      curTable.clearInnerVarCtn();
 
     } else if (curString.equals("CirSen->DeclareS CirSen")) {
 
@@ -344,8 +351,6 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("Condop-><=")) {
 
-    } else if (curString.equals("Condop->=")) {
-
     } else if (curString.equals("Condop->==")) {
 
     } else if (curString.equals("Condop->!=")) {
@@ -356,10 +361,7 @@ public class SemanticAnalyzer {
         // 如果之前变量是char，进行4字节对齐
         int align = 4 - offset % 4;
         globalSignTable.addPramOffset(align);
-        dataSecBuff.append("   .byte '\\0'");
-        for (int i = 1; i < align; i++)
-          dataSecBuff.append(",'\\0'");
-        dataSecBuff.append("\n");
+        dataSecBuff.append(" .space " + align + "#碎片填充  \n");
       }
       String tmpID = "__" + constCtn + "_const";
       constCtn++;
@@ -382,10 +384,7 @@ public class SemanticAnalyzer {
         // 如果之前变量是char，进行4字节对齐
         int align = 4 - offset % 4;
         globalSignTable.addPramOffset(align);
-        dataSecBuff.append("   .byte '\\0'");
-        for (int i = 1; i < align; i++)
-          dataSecBuff.append(",'\\0'");
-        dataSecBuff.append("\n");
+        dataSecBuff.append(" .space " + align + "#碎片填充  \n");
       }
       String tmpID = "__" + constCtn + "_const";
       constCtn++;
@@ -456,6 +455,7 @@ public class SemanticAnalyzer {
   /*
    * srcE和desE要在符号表中才能用
    * 
+   * *并且都是简单变量
    */
   private void movii(String srcE, String desE) {
     Sign srcSign = curTable.getSignByIdName(srcE);
@@ -471,14 +471,13 @@ public class SemanticAnalyzer {
 
     // 源变量->EAX
     if (srcSign.isGlobal) {// 全局变量
-      curTable.addSentence("    movl $" + srcSign.id + ",%ebx\n");
       switch (srcSign.type) {
         case "char":
         case "charConst":
-          curTable.addSentence("    movb (%ebx),%al\n");
+          curTable.addSentence("    movb " + srcSign.id + ",%al\n");
           break;
         default:
-          curTable.addSentence("    movl (%ebx),%eax\n");
+          curTable.addSentence("    movl " + srcSign.id + ",%eax\n");
           break;
       }
     } else {// 局部变量或参数
@@ -493,13 +492,12 @@ public class SemanticAnalyzer {
     }
     // EAX->目的变量
     if (desSign.isGlobal) {
-      curTable.addSentence("    movl $" + desSign.id + ",%ebx\n");
       switch (desSign.type) {
         case "char":
-          curTable.addSentence("    movb %al,(%ebx)\n");
+          curTable.addSentence("    movb %al," + desSign.id + "\n");
           break;
         default:
-          curTable.addSentence("    movl %eax,(%ebx)\n");
+          curTable.addSentence("    movl %eax," + desSign.id + "\n");
           break;
       }
     } else {// 局部变量或参数
@@ -514,12 +512,102 @@ public class SemanticAnalyzer {
     }
   }
 
-  private void movi(String srcE, String reg) {
-
+  /*
+   * 左值是符号表中的值，右值可直接拼接的表达式
+   */
+  private void movir(String srcE, String desE) {
+    Sign srcSign = curTable.getSignByIdName(srcE);
+    if (srcSign.isGlobal) {
+      switch (srcSign.type) {
+        case "char":
+        case "charConst":
+          curTable.addSentence("    movb " + srcSign.id + ",%al\n");
+          curTable.addSentence("    movb %al," + desE + "\n");
+          break;
+        case "int":
+        case "intConst":
+        case "float":
+        case "floatConst":
+          curTable.addSentence("    movl " + srcSign.id + ",%eax\n");
+          curTable.addSentence("    movl %eax," + desE + "\n");
+          break;
+        case "charArray":
+        case "intArray":
+        case "floatArray":
+          curTable.addSentence("    movl $" + srcSign.id + "," + desE + "\n");
+          break;
+        default:
+          break;
+      }
+    } else {
+      switch (srcSign.type) {
+        case "char":
+          curTable.addSentence("    movb " + srcSign.offset + "(%ebp),%al\n");
+          curTable.addSentence("    movb %al," + desE + "\n");
+          break;
+        case "int":
+        case "float":
+          curTable.addSentence("    movl " + srcSign.offset + "(%ebp),%eax\n");
+          curTable.addSentence("    movl %eax," + desE + "\n");
+          break;
+        case "charArray":
+        case "intArray":
+        case "floatArray":
+          curTable.addSentence("    leal " + srcSign.offset + "(%ebp),%eax\n");
+          curTable.addSentence("    movl %eax," + desE + "\n");
+          break;
+        default:
+          break;
+      }
+    }
   };
 
-  private void movrm(String reg, String desE) {
-
+  /*
+   * 左值是直接拼接的表达式,右值是符号表中的值
+   */
+  private void movri(String srcE, String desE) {
+    Sign desSign = curTable.getSignByIdName(desE);
+    if (desSign.isGlobal) {
+      switch (desSign.type) {
+        case "char":
+          curTable.addSentence("    movb " + srcE + ",%al\n");
+          curTable.addSentence("    movb %al," + desSign.id + "\n");
+          break;
+        case "int":
+        case "float":
+          curTable.addSentence("    movl " + srcE + ",%eax\n");
+          curTable.addSentence("    movl %eax," + desSign.id + "\n");
+          break;
+        case "intArray":
+        case "floatArray":
+        case "charArray":
+          // des是数组，不应该被赋值
+          System.err.println("数组" + desSign.id + "不应该被赋值");
+          break;
+        default:
+          break;
+      }
+    } else {
+      switch (desSign.type) {
+        case "char":
+          curTable.addSentence("    movb " + srcE + ",%al\n");
+          curTable.addSentence("    movb %al," + desSign.offset + "(%ebp)\n");
+          break;
+        case "int":
+        case "float":
+          curTable.addSentence("    movl " + srcE + ",%eax\n");
+          curTable.addSentence("    movl %eax," + desSign.offset + "(%ebp)\n");
+          break;
+        case "intArray":
+        case "floatArray":
+        case "charArray":
+          // des是数组，不应该被赋值
+          System.err.println("数组" + desSign.id + "不应该被赋值");
+          break;
+        default:
+          break;
+      }
+    }
   };
 
   private void declareSimVar() {
@@ -530,28 +618,13 @@ public class SemanticAnalyzer {
         // 如果之前变量是char，进行4字节对齐
         int chip = 4 - offset % 4;
         globalSignTable.addPramOffset(chip);
-        dataSecBuff.append("     .byte '\\0'");
-        for (int i = 1; i < chip; i++) {
-          dataSecBuff.append(",'\\0'");
-        }
-        dataSecBuff.append("\n");
+        dataSecBuff.append(" .space " + chip + "#碎片填充  \n");
       }
       Sign tmpSign = new Sign(valueSt.peek(), typeSt.peek(), globalSignTable.getPramOffset(), -1,
           null, true);
       globalSignTable.addPramOffset(sizeOFid);
       globalSignTable.add(tmpSign);
-      switch (tmpSign.type) {
-        case "char":
-          dataSecBuff.append(tmpSign.id + ": .byte '\\0'\n");
-          break;
-        case "int":
-          dataSecBuff.append(tmpSign.id + ": .int 0\n");
-          break;
-        case "float":
-          dataSecBuff.append(tmpSign.id + ": .float 0.0\n");
-        default:
-          break;
-      }
+      dataSecBuff.append(tmpSign.id + ": .space " + sizeOFid + "\n");
     } else {// 局部变量
       int offset = curTable.getLocalOffset();
       if (sizeOFid == 4 && offset % 4 != 0) {
@@ -563,6 +636,74 @@ public class SemanticAnalyzer {
       curTable.addLocalOffset(sizeOFid);
       curTable.add(tmpSign);
     }
+  }
+
+  private void declareArr() {
+    int arrayLen = Integer.valueOf(valueSt.pop());
+    int sizeOFid = typeSt.peek().equals("char") ? 1 : 4;
+    if (curTable == globalSignTable) {// 全局变量
+      int offset = globalSignTable.getPramOffset();
+      if (sizeOFid == 4 && offset % 4 != 0) {
+        // 如果之前变量是char，进行4字节对齐
+        int chip = 4 - offset % 4;
+        globalSignTable.addPramOffset(chip);
+        dataSecBuff.append(" .space " + chip + "#碎片填充  \n");
+      }
+      Sign tmpSign = new Sign(valueSt.peek(), typeSt.peek() + "Array",
+          globalSignTable.getPramOffset(), -1, null, true);
+      globalSignTable.addPramOffset(sizeOFid * arrayLen);
+      globalSignTable.add(tmpSign);
+      dataSecBuff.append(tmpSign.id + ": .space " + arrayLen * sizeOFid + "\n");
+    } else {// 局部变量
+      int offset = curTable.getLocalOffset();
+      if (sizeOFid == 4 && offset % 4 != 0) {
+        // 如果之前变量是char，进行4字节对齐
+        curTable.addLocalOffset(4 - offset % 4);
+      }
+      Sign tmpSign = new Sign(valueSt.peek(), typeSt.peek() + "Array", curTable.getLocalOffset(),
+          -1, null, false);
+      curTable.addLocalOffset(sizeOFid * arrayLen);
+      curTable.add(tmpSign);
+    }
+  }
+
+  private void Expr2_Arr() {// Expr2->id [ Expr ]
+    String exprName = valueSt.pop();
+    String idName = valueSt.pop();
+    // Sign exprSign = curTable.getSignByIdName(exprName);
+    Sign arrSign = curTable.getSignByIdName(idName);
+    String innerID = "__inner" + curTable.getInnerVarCtn();
+    String type = arrSign.type.substring(0, arrSign.type.length() - 5);
+    int offset = curTable.getLocalOffset();
+    if (offset % 4 != 0) {
+      // 如果之前变量是char，进行4字节对齐
+      curTable.addLocalOffset(4 - offset % 4);
+    }
+    Sign innerSign = new Sign(innerID, type, curTable.getLocalOffset(), 0, null, false);
+    curTable.addLocalOffset(4);
+    curTable.add(innerSign);
+    int sizeID = (arrSign.type.indexOf("char") >= 0) ? 1 : 4;
+    movir(exprName, "%ebx");
+    curTable.addSentence("    movl " + arrSign.id + "(,%ebx," + sizeID + "),%eax\n");
+    movri("%eax", innerID);
+  }
+
+  private void Expr2_Func() {// Expr2->id ( M2 CallParaList )
+    curTable.updateMaxParaSize(paraSize.pop());
+    String funcName = valueSt.pop();
+    Sign funcSign = curTable.getSignByIdName(funcName);
+    int offset = curTable.getLocalOffset();
+    if (offset % 4 != 0) {
+      // 如果之前变量是char，进行4字节对齐
+      curTable.addLocalOffset(4 - offset % 4);
+    }
+    curTable.addSentence("    call _" + funcName + "\n");
+    curTable.addSentence("    movl %eax," + curTable.getLocalOffset() + "(%ebp)\n\n");
+    String innerVar = "__inner" + curTable.getInnerVarCtn();
+    Sign innerSign = new Sign(innerVar, funcSign.type, curTable.getLocalOffset(), -1, null, false);
+    curTable.add(innerSign);
+    curTable.addLocalOffset(4);
+    valueSt.push(innerVar);
   }
 
   private void openExe(String param) {

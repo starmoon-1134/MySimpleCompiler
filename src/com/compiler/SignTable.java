@@ -8,16 +8,41 @@ public class SignTable {
   private SignTable parentTable;
   private ArrayList<Sign> table;
   private StringBuffer Sentence;
-  public int maxParaSize;// 当前块内最大的参数列表尺寸
+  private int maxParaSize;// 当前块内最大的参数列表尺寸
+  public int innerVarCtn;// 记录中间变量的数量，规约出一个句子就可以清零
+  private int maxInnerVarCtn;//
 
   public SignTable()
   {
     super();
     this.pramOffset = 8;
-    this.localOffset = 0;
+    this.localOffset = -4;
     this.setParentTable(null);
     this.table = new ArrayList<>();
     this.Sentence = new StringBuffer();
+    this.innerVarCtn = 0;
+  }
+
+  public void updateMaxParaSize(int curParasize) {
+    if (curParasize > this.maxParaSize)
+      this.maxParaSize = curParasize;
+  }
+
+  public void updateMaxInnerVarCtn(int curInnerVarCtn) {
+    if (curInnerVarCtn > this.maxInnerVarCtn)
+      this.maxInnerVarCtn = curInnerVarCtn;
+  }
+
+  public int getReserveSize() {
+    return -localOffset + maxInnerVarCtn + maxParaSize;
+  }
+
+  public void clearInnerVarCtn() {
+    this.innerVarCtn = 0;
+  }
+
+  public int getInnerVarCtn() {
+    return this.innerVarCtn;
   }
 
   /*
