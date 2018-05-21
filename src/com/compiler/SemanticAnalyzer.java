@@ -81,7 +81,7 @@ public class SemanticAnalyzer {
     } else if (curString.equals("MainDef->int main ( M0 ParaList ) { Sen return Expr ; }")) {
       codeSecBuff.append("\n.globl _main\n");
       codeSecBuff.append("_main:\n");
-      codeSecBuff.append("    pushl %ebx\n");
+      codeSecBuff.append("    pushl %ebp\n");
       codeSecBuff.append("    movl %esp, %ebp\n");
       codeSecBuff.append("    sub $" + curTable.getReserveSize() + ",%esp\n");
 
@@ -128,7 +128,7 @@ public class SemanticAnalyzer {
 
       codeSecBuff.append("\n.globl _" + funcName + "\n");
       codeSecBuff.append("_" + funcName + ":\n");
-      codeSecBuff.append("    pushl %ebx\n");
+      codeSecBuff.append("    pushl %ebp\n");
       codeSecBuff.append("    movl %esp, %ebp\n");
       codeSecBuff.append("    sub $" + curTable.getReserveSize() + ",%esp\n");
 
@@ -211,6 +211,14 @@ public class SemanticAnalyzer {
         }
         curTable.addSentence("    fstpl " + paraSize.peek() + "(%esp)\n");
         paraSize.push(paraSize.pop() + 8);
+      } else if (curCallFunc.equals("printf") && paraSign.type.equals("char")) {
+        if (paraSign.isGlobal) {
+          curTable.addSentence("    movsbl " + paraSign.id + ",%eax\n");
+        } else {
+          curTable.addSentence("    movsbl " + paraSign.offset + "(%ebp),%eax\n");
+        }
+        curTable.addSentence("    movl %eax," + paraSize.peek() + "(%esp)\n");
+        paraSize.push(paraSize.pop() + 4);
       } else if (curCallFunc.equals("scanf")) {
         if (paraSign.isGlobal) {
           curTable.addSentence("    movl $" + paraSign.id + ",%ebx\n");
@@ -220,22 +228,24 @@ public class SemanticAnalyzer {
         curTable.addSentence("    movl %ebx," + paraSize.peek() + "(%esp)\n");
         paraSize.push(paraSize.pop() + 4);
       } else {
-        if (paraSign.isGlobal) {
-          curTable.addSentence("    movl $" + paraSign.id + ",%ebx\n");
-        } else {
-          curTable.addSentence("    movl " + paraSign.offset + "(%ebp),%ebx\n");
-        }
-        if (paraSign.type.equals("charArray")) {/////////////////////////////////////////////
-          curTable.addSentence("    movl %ebx," + paraSize.peek() + "(%esp)\n");
-        } else {
-          curTable.addSentence("    movl (%ebx),%eax\n");
-          curTable.addSentence("    movl %eax," + paraSize.peek() + "(%esp)\n");
-        }
+        // if (paraSign.isGlobal) {
+        // curTable.addSentence(" movl $" + paraSign.id + ",%ebx\n");
+        // } else {
+        // curTable.addSentence(" movl " + paraSign.offset + "(%ebp),%ebx\n");
+        // }
+        // if (paraSign.type.equals("charArray")) {/////////////////////////////////////////////
+        // curTable.addSentence(" movl %ebx," + paraSize.peek() + "(%esp)\n");
+        // } else {
+        // curTable.addSentence(" movl (%ebx),%eax\n");
+        // curTable.addSentence(" movl %eax," + paraSize.peek() + "(%esp)\n");
+        // }
+        movir(paraID, paraSize.peek() + "(%esp)");
         paraSize.push(paraSize.pop() + 4);
       }
 
     } else if (curString.equals("DeclareS->Type IDlist ;")) {
       typeSt.pop();// 511
+      curTable.clearInnerVarCtn();
     } else if (curString.equals("IDlist->ID1")) {
 
     } else if (curString.equals("IDlist->ID2")) {
@@ -263,15 +273,32 @@ public class SemanticAnalyzer {
       String Expr = valueSt.pop();
       String variable = valueSt.pop();
       movii(Expr, variable);
+      curTable.clearInnerVarCtn();
+
+    } else if (curString.equals("AssignS->id [ Expr ] = Expr ;")) {
+      leftArrAsign();// 内部pop3次
+      curTable.clearInnerVarCtn();
     } else if (curString.equals("Expr->Expr + Expr1")) {
+      String Expr1 = valueSt.pop();
+      String Expr = valueSt.pop();
+      arrithOp(Expr, '+', Expr1);
 
     } else if (curString.equals("Expr->Expr - Expr1")) {
+      String Expr1 = valueSt.pop();
+      String Expr = valueSt.pop();
+      arrithOp(Expr, '-', Expr1);
 
     } else if (curString.equals("Expr->Expr1")) {
 
     } else if (curString.equals("Expr1->Expr1 * Expr2")) {
+      String Expr1 = valueSt.pop();
+      String Expr = valueSt.pop();
+      arrithOp(Expr, '*', Expr1);
 
     } else if (curString.equals("Expr1->Expr1 / Expr2")) {
+      String Expr1 = valueSt.pop();
+      String Expr = valueSt.pop();
+      arrithOp(Expr, '/', Expr1);
 
     } else if (curString.equals("Expr1->Expr2")) {
 
@@ -310,7 +337,7 @@ public class SemanticAnalyzer {
     } else if (curString.equals("ifSen->Sen")) {
 
     } else if (curString.equals("ifSen->Sen return Expr ;")) {
-
+      curTable.clearInnerVarCtn();
     } else if (curString.equals("whileS->while ( BoolE ) { CirSen }")) {
 
     } else if (curString.equals("CallS->id ( M2 CallParaList ) ;")) {
@@ -328,7 +355,7 @@ public class SemanticAnalyzer {
     } else if (curString.equals("CirSen->whileS CirSen")) {
 
     } else if (curString.equals("CirSen->return Expr ;")) {
-
+      curTable.clearInnerVarCtn();
     } else if (curString.equals("CirSen->break ;")) {
 
     } else if (curString.equals("CirSen->continue ;")) {
@@ -374,7 +401,7 @@ public class SemanticAnalyzer {
       String tmpID = "__" + constCtn + "_const";
       constCtn++;
       Sign sign = new Sign(tmpID, "charArray", globalSignTable.getPramOffset(), -1, null, true);
-      globalSignTable.addPramOffset(valueSt.peek().length() + 1);
+      globalSignTable.addPramOffset(valueSt.peek().length());// 原来是length+1
       globalSignTable.add(sign);
       dataSecBuff.append(tmpID + ": .asciz \"" + valueSt.pop() + "\"\n");
       valueSt.push(tmpID);
@@ -626,7 +653,7 @@ public class SemanticAnalyzer {
       globalSignTable.add(tmpSign);
       dataSecBuff.append(tmpSign.id + ": .space " + sizeOFid + "\n");
     } else {// 局部变量
-      int offset = curTable.getLocalOffset();
+      int offset = -curTable.getLocalOffset();
       if (sizeOFid == 4 && offset % 4 != 0) {
         // 如果之前变量是char，进行4字节对齐
         curTable.addLocalOffset(4 - offset % 4);
@@ -655,7 +682,7 @@ public class SemanticAnalyzer {
       globalSignTable.add(tmpSign);
       dataSecBuff.append(tmpSign.id + ": .space " + arrayLen * sizeOFid + "\n");
     } else {// 局部变量
-      int offset = curTable.getLocalOffset();
+      int offset = -curTable.getLocalOffset();
       if (sizeOFid == 4 && offset % 4 != 0) {
         // 如果之前变量是char，进行4字节对齐
         curTable.addLocalOffset(4 - offset % 4);
@@ -667,14 +694,15 @@ public class SemanticAnalyzer {
     }
   }
 
-  private void Expr2_Arr() {// Expr2->id [ Expr ]
-    String exprName = valueSt.pop();
+  private void Expr2_Arr() {// Expr2->id [ Expr ] (右值)
+    String indexName = valueSt.pop();
     String idName = valueSt.pop();
     // Sign exprSign = curTable.getSignByIdName(exprName);
     Sign arrSign = curTable.getSignByIdName(idName);
     String innerID = "__inner" + curTable.getInnerVarCtn();
+    curTable.addInnerVarCtn();
     String type = arrSign.type.substring(0, arrSign.type.length() - 5);
-    int offset = curTable.getLocalOffset();
+    int offset = -curTable.getLocalOffset();
     if (offset % 4 != 0) {
       // 如果之前变量是char，进行4字节对齐
       curTable.addLocalOffset(4 - offset % 4);
@@ -682,17 +710,46 @@ public class SemanticAnalyzer {
     Sign innerSign = new Sign(innerID, type, curTable.getLocalOffset(), 0, null, false);
     curTable.addLocalOffset(4);
     curTable.add(innerSign);
-    int sizeID = (arrSign.type.indexOf("char") >= 0) ? 1 : 4;
-    movir(exprName, "%ebx");
-    curTable.addSentence("    movl " + arrSign.id + "(,%ebx," + sizeID + "),%eax\n");
-    movri("%eax", innerID);
+    movir(indexName, "%ebx");// ebx存索引值
+    if (arrSign.isGlobal) {
+      switch (arrSign.type) {
+        case "charArray":
+          curTable.addSentence("    movb " + arrSign.id + "(,%ebx,1),%al\n");
+          movri("%al", innerID);
+          break;
+        case "intArray":
+        case "floatArray":
+          curTable.addSentence("    movl " + arrSign.id + "(,%ebx,4),%eax\n");
+          movri("%eax", innerID);
+          break;
+        default:
+          break;
+      }
+    } else {
+      switch (arrSign.type) {
+        case "charArray":
+          curTable.addSentence("    leal " + arrSign.offset + "(%ebp),%edx\n");
+          curTable.addSentence("    movb (%edx,%ebx,1),%al\n");
+          movri("%al", innerID);
+          break;
+        case "intArray":
+        case "floatArray":
+          curTable.addSentence("    leal " + arrSign.offset + "(%ebp),%edx\n");
+          curTable.addSentence("    movl (%edx,%ebx,4),%eax\n");
+          movri("%eax", innerID);
+          break;
+        default:
+          break;
+      }
+    }
+    valueSt.push(innerID);
   }
 
   private void Expr2_Func() {// Expr2->id ( M2 CallParaList )
     curTable.updateMaxParaSize(paraSize.pop());
     String funcName = valueSt.pop();
     Sign funcSign = curTable.getSignByIdName(funcName);
-    int offset = curTable.getLocalOffset();
+    int offset = -curTable.getLocalOffset();
     if (offset % 4 != 0) {
       // 如果之前变量是char，进行4字节对齐
       curTable.addLocalOffset(4 - offset % 4);
@@ -700,10 +757,170 @@ public class SemanticAnalyzer {
     curTable.addSentence("    call _" + funcName + "\n");
     curTable.addSentence("    movl %eax," + curTable.getLocalOffset() + "(%ebp)\n\n");
     String innerVar = "__inner" + curTable.getInnerVarCtn();
+    curTable.addInnerVarCtn();
     Sign innerSign = new Sign(innerVar, funcSign.type, curTable.getLocalOffset(), -1, null, false);
     curTable.add(innerSign);
     curTable.addLocalOffset(4);
     valueSt.push(innerVar);
+  }
+
+  private void arrithOp(String Expr, char op, String Expr1) {
+    Sign aSign = curTable.getSignByIdName(Expr);
+    Sign bSign = curTable.getSignByIdName(Expr1);
+    String innerType = null;
+    String innerID = "__inner" + curTable.getInnerVarCtn();
+    curTable.addInnerVarCtn();
+    int offset = -curTable.getLocalOffset();
+    if (offset % 4 != 0) {
+      // 如果之前变量是char，进行4字节对齐
+      curTable.addLocalOffset(4 - offset % 4);
+    }
+    if (op == '+') {
+      if (aSign.type.indexOf("float") >= 0) {// 浮点数
+        innerType = "float";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("不支持float与char运算\n");
+          return;
+        } else if (bSign.type.indexOf("int") >= 0) {// float+int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fiadd " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fiadd " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        } else {// float+float
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    flds " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    faddp\n");
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      } else if (aSign.type.indexOf("int") >= 0) {// int
+        innerType = "int";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("不支持int与char运算\n");
+          return;
+        } else if (bSign.type.indexOf("int") >= 0) {// int + int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    movl " + aSign.id + ",%eax\n");
+          } else {
+            curTable.addSentence("    movl " + aSign.offset + "(%ebp),%eax\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    movl " + bSign.id + ",%ebx\n");
+          } else {
+            curTable.addSentence("    movl " + bSign.offset + "(%ebp),%ebx\n");
+          }
+          curTable.addSentence("    add %ebx,%eax\n");
+          curTable.addSentence("    movl %eax," + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      } else {
+        System.err.println("不支持char和" + bSign.type + "+运算 ");
+      }
+
+    } else if (op == '-') {
+      if (aSign.type.indexOf("float") >= 0) {// 浮点数
+        innerType = "float";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("不支持float与char  -运算\n");
+          return;
+        } else if (bSign.type.indexOf("int") >= 0) {// float-int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fisub " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fisub " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        } else {// float-float
+          if (bSign.isGlobal) {
+            curTable.addSentence("    flds " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + bSign.offset + "(%ebp)\n");
+          }
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fsubp \n");
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      } else if (aSign.type.indexOf("int") >= 0) {// int
+        innerType = "int";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("不支持int与char运算\n");
+          return;
+        } else if (bSign.type.indexOf("int") >= 0) {// int - int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    movl " + aSign.id + ",%eax\n");
+          } else {
+            curTable.addSentence("    movl " + aSign.offset + "(%ebp),%eax\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    movl " + bSign.id + ",%ebx\n");
+          } else {
+            curTable.addSentence("    movl " + bSign.offset + "(%ebp),%ebx\n");
+          }
+          curTable.addSentence("    sub %ebx,%eax\n");
+          curTable.addSentence("    movl %eax," + curTable.getLocalOffset() + "(%ebp)\n");
+        } else {// int - float
+          innerType = "float";
+          if (bSign.isGlobal) {
+            curTable.addSentence("    flds " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + bSign.offset + "(%ebp)\n");
+          }
+          if (aSign.isGlobal) {
+            curTable.addSentence("    fild " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    fild " + aSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fsubp\n");
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      } else if (bSign.type.indexOf("char") >= 0) {// char-char
+        innerType = "char";
+        if (aSign.isGlobal) {
+          curTable.addSentence("    movb " + aSign.id + ",%al\n");
+        } else {
+          curTable.addSentence("    movb " + aSign.offset + "(%ebp),%al\n");
+        }
+        if (bSign.isGlobal) {
+          curTable.addSentence("    movb " + bSign.id + ",%bl\n");
+        } else {
+          curTable.addSentence("    movb " + bSign.offset + "(%ebp),%bl\n");
+        }
+        curTable.addSentence("    sub %al,%bl\n");
+        curTable.addSentence("    movb %al," + curTable.getLocalOffset() + "(%ebp)\n");
+      } else {
+        System.err.println("不支持char和" + bSign.type + "+运算 ");
+      }
+    } else if (op == '*') {
+
+    } else if (op == '/') {
+
+    }
+    Sign innerSign = new Sign(innerID, innerType, curTable.getLocalOffset(), -1, null, false);
+    curTable.add(innerSign);
+    curTable.addLocalOffset(4);
+    valueSt.push(innerID);
   }
 
   private void openExe(String param) {
@@ -731,4 +948,39 @@ public class SemanticAnalyzer {
     System.err.println(new String(out));
   }
 
+  private void leftArrAsign() {// AssignS->id [ intConst ] = Expr ;
+    String rightExpr = valueSt.pop();
+    String index = valueSt.pop();
+    String arrName = valueSt.pop();
+    Sign rightSign = curTable.getSignByIdName(rightExpr);
+    Sign indexSign = curTable.getSignByIdName(index);
+    Sign arrSign = curTable.getSignByIdName(arrName);
+    int sizeOFid = (arrSign.type.indexOf("char") >= 0) ? 1 : 4;
+    if (indexSign.isGlobal) {
+      curTable.addSentence("    movl " + indexSign.id + ",%esi\n");
+    } else {
+      curTable.addSentence("    movl " + indexSign.offset + "(%ebp),%esi\n");
+    }
+    if (arrSign.isGlobal) {
+      curTable.addSentence("    leal " + arrSign.id + "(,%esi," + sizeOFid + "),%ebx\n");
+    } else {
+      curTable.addSentence("    leal " + arrSign.offset + "(%ebp,%esi," + sizeOFid + "),%ebx\n");
+    }
+    if (sizeOFid > 1) {
+      movir(rightExpr, "%eax");
+    } else {
+      movir(rightExpr, "%al");
+    }
+    switch (arrSign.type) {
+      case "charArray":
+        curTable.addSentence("    movb %al,(%ebx)\n");
+        break;
+      case "intArray":
+      case "floatArray":
+        curTable.addSentence("    movl %eax,(%ebx)\n");
+        break;
+      default:
+        break;
+    }
+  }
 }

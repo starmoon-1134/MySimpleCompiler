@@ -36,6 +36,7 @@ ID1->id
 ID2->id = Expr
 ID3->id [ intConst ]
 AssignS->id = Expr ;
+AssignS->id [ Expr ] = Expr ;
 Expr->Expr + Expr1
 Expr->Expr - Expr1
 Expr->Expr1

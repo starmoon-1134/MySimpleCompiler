@@ -1,17 +1,40 @@
-char ch;
-char dddd[5];
-int c,s;
+
+int aaaaa(int i){
+	test(i);
+	return 0;
+}
 
 int test(int i){
+	printf("func_test_   %d\n",i);
 	return 0;
 }
 
 int main(){
-	float fff=3.0;
-	scanf("%c",ch);
-	s = printf("%c\n",ch);
-	printf("%f\n",fff);
-	printf("s  %d\n",s);
+	float fff=3.3;
+	int b=2;
+	char subc=1,c='e';
+	char Carr[5];
+	int Iarr[3];
+	
+	Carr[0] = 'a';
+	Iarr[2] = 5;
+	
+	aaaaa(889);
+	
+	printf("%c\n",c-subc);
+	printf("%d\n",Iarr[b]+1);
+	
+	printf("%f\n",fff+b);
+	printf("%f\n",b+fff);
+	printf("%f\n",fff+fff);
+	printf("%d\n",b+b);
+	
+	printf("%f\n",fff-b);
+	printf("%f\n",b-fff);
+	printf("%f\n",fff-1.5);
+	printf("%d\n",b-1);
+	printf("%d\n",1-b);
+	
 	return 0;
 }
 

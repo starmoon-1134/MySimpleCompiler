@@ -38,11 +38,31 @@ public class SignTable {
   }
 
   public void clearInnerVarCtn() {
+    this.localOffset += innerVarCtn * 4;
+    while (innerVarCtn > 0) {
+      removeByName("__inner" + (innerVarCtn - 1));
+      innerVarCtn--;
+    }
     this.innerVarCtn = 0;
+  }
+
+  public void addInnerVarCtn() {
+    this.innerVarCtn++;
   }
 
   public int getInnerVarCtn() {
     return this.innerVarCtn;
+  }
+
+  private void removeByName(String Name) {
+    Sign sign2 = null;
+    for (Sign sign : table) {
+      if (sign.id.equals(Name)) {
+        sign2 = sign;
+        break;
+      }
+    }
+    table.remove(sign2);
   }
 
   /*
