@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Stack;
 
 public class SemanticAnalyzer {
@@ -16,10 +18,16 @@ public class SemanticAnalyzer {
   Stack<String> typeSt;
   Stack<String> valueSt;
   Stack<Integer> paraSize;// 一个函数对应2个值，下边是最大值，上边是当前值
+  Stack<ArrayList<Integer>> trueListST;
+  Stack<ArrayList<Integer>> falseListST;
+  Stack<ArrayList<Integer>> nextListST;
+  HashMap<String, Integer> LabelMap;
+  Stack<String> labelSt;
 
   StringBuffer dataSecBuff;
   StringBuffer codeSecBuff;
 
+  int LabelCtn = 0;
   int constCtn = 0;
   String curCallFunc;
   boolean isEBX0 = false;// EBX是否为0
@@ -41,6 +49,12 @@ public class SemanticAnalyzer {
     typeSt = new Stack<>();
     valueSt = new Stack<>();
     paraSize = new Stack<>();
+    trueListST = new Stack<>();
+    falseListST = new Stack<>();
+    nextListST = new Stack<>();
+    LabelMap = new HashMap<>();
+    labelSt = new Stack<>();
+
     // symbolReader = new BufferedReader(new FileReader(MainClass.symbolFileNameString));
     dataSecBuff = new StringBuffer(".section .data\n");
     codeSecBuff = new StringBuffer(".section .text\n");
@@ -62,13 +76,13 @@ public class SemanticAnalyzer {
       asmFile.close();
       // openExe("gcc " + MainClass.asmFileNameString.substring(1) + " -o "
       // + MainClass.exeFileNameString.substring(1));
-      Desktop.getDesktop().open(new File(MainClass.genexeFileNameString));
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        // TODO 自动生成的 catch 块
-        e.printStackTrace();
-      }
+      // Desktop.getDesktop().open(new File(MainClass.genexeFileNameString));
+      // try {
+      // Thread.sleep(1000);
+      // } catch (InterruptedException e) {
+      // // TODO 自动生成的 catch 块
+      // e.printStackTrace();
+      // }
       Desktop.getDesktop().open(new File(MainClass.batFileNameString));
       // openExe("cmd /c start" + MainClass.exeFileNameString);
 
@@ -176,12 +190,16 @@ public class SemanticAnalyzer {
       typeSt.pop();
     } else if (curString.equals("Sen->DeclareS Sen")) {
 
-    } else if (curString.equals("Sen->AssignS Sen")) {
-
-    } else if (curString.equals("Sen->ifS Sen")) {
-
-    } else if (curString.equals("Sen->whileS Sen")) {
-
+    } else if (curString.equals("Sen->AssignS M3 Sen")) {
+      nextListST.push(new ArrayList<>());
+    } else if (curString.equals("Sen->ifS M3 Sen")) {
+      ArrayList<Integer> s2NextList = nextListST.pop();
+      curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      nextListST.push(s2NextList);
+    } else if (curString.equals("Sen->whileS M3 Sen")) {
+      ArrayList<Integer> s2NextList = nextListST.pop();
+      curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      nextListST.push(s2NextList);
     } else if (curString.equals("Sen->CallS ; Sen")) {
 
     } else if (curString.equals("Sen->@null")) {
@@ -314,31 +332,61 @@ public class SemanticAnalyzer {
       Expr2_Func();
     } else if (curString.equals("BoolE->BoolE1")) {
 
-    } else if (curString.equals("BoolE->BoolE || BoolE1")) {
+    } else if (curString.equals("BoolE->BoolE || M3 BoolE1")) {
+      ArrayList<Integer> b2FalseList = trueListST.pop();
+      ArrayList<Integer> b1FalseList = trueListST.pop();
+      curTable.backpatch(b1FalseList, labelSt.peek(), LabelMap.get(labelSt.pop()));
+      trueListST.push(merge(trueListST.pop(), trueListST.pop()));
+      falseListST.push(b2FalseList);
 
     } else if (curString.equals("BoolE1->BoolE2")) {
 
-    } else if (curString.equals("BoolE1->BoolE1 && BoolE2")) {
-
+    } else if (curString.equals("BoolE1->BoolE1 && M3 BoolE2")) {
+      ArrayList<Integer> b2TrueList = trueListST.pop();
+      ArrayList<Integer> b1TrueList = trueListST.pop();
+      curTable.backpatch(b1TrueList, labelSt.peek(), LabelMap.get(labelSt.pop()));
+      trueListST.push(b2TrueList);
+      falseListST.push(merge(falseListST.pop(), falseListST.pop()));
     } else if (curString.equals("BoolE2->BoolE3")) {
 
     } else if (curString.equals("BoolE2->! BoolE3")) {
-
+      ArrayList<Integer> trueList = trueListST.pop();
+      trueListST.push(falseListST.pop());
+      falseListST.push(trueList);
     } else if (curString.equals("BoolE3->( BoolE )")) {
 
     } else if (curString.equals("BoolE3->Expr Condop Expr")) {
+      BEopE();
+    } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen }")) {
+      curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      nextListST.push(merge(nextListST.pop(), falseListST.pop()));
+    } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen N0 } else { M3 ifSen }")) {
+      String mLastLabel = labelSt.pop();
+      ArrayList<Integer> s2nextList = nextListST.pop();
+      ArrayList<Integer> nnextList = nextListST.pop();
+      curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      curTable.backpatch(falseListST.pop(), mLastLabel, LabelMap.get(mLastLabel));
+      nextListST.push(merge(nextListST.pop(), merge(nnextList, s2nextList)));
 
-    } else if (curString.equals("ifS->if ( BoolE ) { ifSen }")) {
-
-    } else if (curString.equals("ifS->if ( BoolE ) { ifSen } else { ifSen }")) {
-
-    } else if (curString.equals("ifS->if ( BoolE ) { ifSen } else ifS")) {
+    } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen N0 } else M3 ifS")) {
+      String mLastLabel = labelSt.pop();
+      ArrayList<Integer> s2nextList = nextListST.pop();
+      ArrayList<Integer> nnextList = nextListST.pop();
+      curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      curTable.backpatch(falseListST.pop(), mLastLabel, LabelMap.get(mLastLabel));
+      nextListST.push(merge(nextListST.pop(), merge(nnextList, s2nextList)));
 
     } else if (curString.equals("ifSen->Sen")) {
 
     } else if (curString.equals("ifSen->Sen return Expr ;")) {
       curTable.clearInnerVarCtn();
-    } else if (curString.equals("whileS->while ( BoolE ) { CirSen }")) {
+    } else if (curString.equals("whileS->while ( M3 BoolE ) { M3 CirSen }")) {
+      String m2Label = labelSt.pop();
+      String m1Label = labelSt.pop();
+      curTable.backpatch(nextListST.pop(), m1Label, LabelMap.get(m1Label));
+      curTable.backpatch(trueListST.pop(), m2Label, LabelMap.get(m2Label));
+      nextListST.push(falseListST.pop());
+      curTable.addSentence("    jmp " + m1Label);
 
     } else if (curString.equals("CallS->id ( M2 CallParaList ) ;")) {
       curTable.addSentence("    call _" + valueSt.pop() + "\n\n");
@@ -348,12 +396,16 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("CirSen->DeclareS CirSen")) {
 
-    } else if (curString.equals("CirSen->AssignS CirSen")) {
-
-    } else if (curString.equals("CirSen->CirifS CirSen")) {
-
-    } else if (curString.equals("CirSen->whileS CirSen")) {
-
+    } else if (curString.equals("CirSen->AssignS M3 CirSen")) {
+      nextListST.push(new ArrayList<>());
+    } else if (curString.equals("CirSen->CirifS M3 CirSen")) {
+      ArrayList<Integer> s2NextList = nextListST.pop();
+      curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      nextListST.push(s2NextList);
+    } else if (curString.equals("CirSen->whileS M3 CirSen")) {
+      ArrayList<Integer> s2NextList = nextListST.pop();
+      curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      nextListST.push(s2NextList);
     } else if (curString.equals("CirSen->return Expr ;")) {
       curTable.clearInnerVarCtn();
     } else if (curString.equals("CirSen->break ;")) {
@@ -364,24 +416,37 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("CirSen->@null")) {
 
-    } else if (curString.equals("CirifS->if ( BoolE ) { CirSen }")) {
+    } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen }")) {
+      curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      nextListST.push(merge(nextListST.pop(), falseListST.pop()));
+    } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen N0 } else { M3 CirSen }")) {
+      String mLastLabel = labelSt.pop();
+      ArrayList<Integer> s2nextList = nextListST.pop();
+      ArrayList<Integer> nnextList = nextListST.pop();
+      curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      curTable.backpatch(falseListST.pop(), mLastLabel, LabelMap.get(mLastLabel));
+      nextListST.push(merge(nextListST.pop(), merge(nnextList, s2nextList)));
 
-    } else if (curString.equals("CirifS->if ( BoolE ) { CirSen } else { CirSen }")) {
-
-    } else if (curString.equals("CirifS->if ( BoolE ) { CirSen } else CirifS")) {
+    } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen N0 } else M3 CirifS")) {
+      String mLastLabel = labelSt.pop();
+      ArrayList<Integer> s2nextList = nextListST.pop();
+      ArrayList<Integer> nnextList = nextListST.pop();
+      curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
+      curTable.backpatch(falseListST.pop(), mLastLabel, LabelMap.get(mLastLabel));
+      nextListST.push(merge(nextListST.pop(), merge(nnextList, s2nextList)));
 
     } else if (curString.equals("Condop->>")) {
-
+      valueSt.push(">");
     } else if (curString.equals("Condop->>=")) {
-
+      valueSt.push(">=");
     } else if (curString.equals("Condop-><")) {
-
+      valueSt.push("<");
     } else if (curString.equals("Condop-><=")) {
-
+      valueSt.push("<=");
     } else if (curString.equals("Condop->==")) {
-
+      valueSt.push("==");
     } else if (curString.equals("Condop->!=")) {
-
+      valueSt.push("!=");
     } else if (curString.equals("Const->intConst")) {
       int offset = globalSignTable.getPramOffset();
       if (offset % 4 != 0) {
@@ -459,7 +524,9 @@ public class SemanticAnalyzer {
       curCallFunc = valueSt.peek();
       curTable.addSentence("#调用函数:" + curCallFunc + "\n");
     } else if (curString.equals("M3->@null")) {
-
+      LabelMap.put("L" + LabelCtn, curTable.getIndexOfLastSen());
+      labelSt.push("L" + LabelCtn);
+      LabelCtn++;
     } else if (curString.equals("M4->@null")) {
 
     } else if (curString.equals("M5->@null")) {
@@ -468,6 +535,8 @@ public class SemanticAnalyzer {
 
     } else if (curString.equals("M7->@null")) {
 
+    } else if (curString.equals("N0->@null")) {
+      nextListST.push(new ArrayList<>(curTable.getIndexOfLastSen()));
     }
   }
 
@@ -948,7 +1017,7 @@ public class SemanticAnalyzer {
     System.err.println(new String(out));
   }
 
-  private void leftArrAsign() {// AssignS->id [ intConst ] = Expr ;
+  private void leftArrAsign() {// AssignS->id [ Expr ] = Expr ;
     String rightExpr = valueSt.pop();
     String index = valueSt.pop();
     String arrName = valueSt.pop();
@@ -983,4 +1052,152 @@ public class SemanticAnalyzer {
         break;
     }
   }
+
+  private void BEopE() {// BoolE3->Expr Condop Expr
+    String bExpr = valueSt.pop();
+    String op = valueSt.pop();
+    String aExpr = valueSt.pop();
+    Sign aSign = curTable.getSignByIdName(aExpr);
+    Sign bSign = curTable.getSignByIdName(bExpr);
+    String opType = null;
+    if (aSign.type.indexOf("float") >= 0) {
+      opType = "float";
+      if (bSign.type.indexOf("char") >= 0) {
+        System.err.println("float 和 char不可比较！");
+      } else if (bSign.type.indexOf("int") >= 0) {// float op int
+        if (aSign.isGlobal) {
+          curTable.addSentence("    flds " + aSign.id + "\n");
+        } else {
+          curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+        }
+        if (bSign.isGlobal) {
+          curTable.addSentence("    ficomp " + bSign.id + "\n");
+        } else {
+          curTable.addSentence("    ficomp " + bSign.offset + "(%ebp)\n");
+        }
+        curTable.addSentence("    fnstsw %ax\n    sahf\n");
+      } else {// float op float
+        if (aSign.isGlobal) {
+          curTable.addSentence("    flds " + aSign.id + "\n");
+        } else {
+          curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+        }
+        if (bSign.isGlobal) {
+          curTable.addSentence("    fcomp " + bSign.id + "\n");
+        } else {
+          curTable.addSentence("    fcomp " + bSign.offset + "(%ebp)\n");
+        }
+        curTable.addSentence("    fnstsw %ax\n    sahf\n");
+      }
+    } else if (aSign.type.indexOf("int") >= 0) {// int
+      opType = "int";
+      if (bSign.type.indexOf("char") >= 0) {
+        System.err.println("int 和 char不可比较！");
+      } else if (bSign.type.indexOf("float") >= 0) {// int op float
+        opType = "float";
+        if (aSign.isGlobal) {
+          curTable.addSentence("    fild " + aSign.id + "\n");
+        } else {
+          curTable.addSentence("    fild " + aSign.offset + "(%ebp)\n");
+        }
+        if (bSign.isGlobal) {
+          curTable.addSentence("    fcomp " + bSign.id + "\n");
+        } else {
+          curTable.addSentence("    fcomp " + bSign.offset + "(%ebp)\n");
+        }
+        curTable.addSentence("    fnstsw %ax\n    sahf\n");
+      } else {// int op int
+        if (aSign.isGlobal) {
+          curTable.addSentence("    movl " + aSign.id + ",%eax\n");
+        } else {
+          curTable.addSentence("    movl " + aSign.offset + "(%ebp),%eax\n");
+        }
+        if (bSign.isGlobal) {
+          curTable.addSentence("    movl " + bSign.id + ",%ebx\n");
+        } else {
+          curTable.addSentence("    movl " + bSign.offset + "(%ebp),%ebx\n");
+        }
+        curTable.addSentence("    cmp %ebx,%eax\n");
+      }
+    } else {
+      opType = "char";
+      if (bSign.type.indexOf("char") < 0) {
+        System.err.println("不支持char和" + bSign.type + "比较");
+      } else {
+        if (aSign.isGlobal) {
+          curTable.addSentence("    movb " + aSign.id + ",%al\n");
+        } else {
+          curTable.addSentence("    movb " + aSign.offset + "(%ebp),%al\n");
+        }
+        if (bSign.isGlobal) {
+          curTable.addSentence("    movb " + bSign.id + ",%bl\n");
+        } else {
+          curTable.addSentence("    movb " + bSign.offset + "(%ebp),%bl\n");
+        }
+        curTable.addSentence("    cmp %bl,%al\n");
+      }
+    }
+
+    if (opType.equals("float")) {// float 基于无符号的跳转指令
+      switch (op) {
+        case ">":
+          curTable.addSentence("    JA ");
+          break;
+        case ">=":
+          curTable.addSentence("    JAE ");
+          break;
+        case "<":
+          curTable.addSentence("    JB ");
+          break;
+        case "<=":
+          curTable.addSentence("    JBE ");
+          break;
+        case "==":
+          curTable.addSentence("    JE ");
+          break;
+        case "!=":
+          curTable.addSentence("    JNE ");
+          break;
+        default:
+          break;
+      }
+    } else {// int 和 char 基于有符号的比较
+      switch (op) {
+        case ">":
+          curTable.addSentence("    JG ");
+          break;
+        case ">=":
+          curTable.addSentence("    JGE ");
+          break;
+        case "<":
+          curTable.addSentence("    JL ");
+          break;
+        case "<=":
+          curTable.addSentence("    JLE ");
+          break;
+        case "==":
+          curTable.addSentence("    JE ");
+          break;
+        case "!=":
+          curTable.addSentence("    JNE ");
+          break;
+        default:
+          break;
+      }
+    }
+    ArrayList<Integer> trueList = new ArrayList<>();
+    ArrayList<Integer> falseList = new ArrayList<>();
+    trueList.add(curTable.getIndexOfLastSen());
+    curTable.addSentence("jmp ");
+    falseList.add(curTable.getIndexOfLastSen());
+    trueListST.push(trueList);
+    falseListST.push(falseList);
+  }
+
+  private ArrayList<Integer> merge(ArrayList<Integer> lst1, ArrayList<Integer> lst2) {
+    for (int x : lst1)
+      lst2.add(x);
+    return lst2;
+  }
+
 }

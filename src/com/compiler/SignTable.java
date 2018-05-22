@@ -7,7 +7,8 @@ public class SignTable {
   private int localOffset;
   private SignTable parentTable;
   private ArrayList<Sign> table;
-  private StringBuffer Sentence;
+  // private StringBuffer Sentence;
+  private ArrayList<String> Sentences;
   private int maxParaSize;// 当前块内最大的参数列表尺寸
   public int innerVarCtn;// 记录中间变量的数量，规约出一个句子就可以清零
   private int maxInnerVarCtn;//
@@ -19,7 +20,8 @@ public class SignTable {
     this.localOffset = -4;
     this.setParentTable(null);
     this.table = new ArrayList<>();
-    this.Sentence = new StringBuffer();
+    // this.Sentence = new StringBuffer();
+    this.Sentences = new ArrayList<>();
     this.innerVarCtn = 0;
   }
 
@@ -163,7 +165,11 @@ public class SignTable {
    * @return sentence
    */
   public String getSentence() {
-    return Sentence.toString();
+    StringBuffer retBuffer = new StringBuffer();
+    for (String str : this.Sentences) {
+      retBuffer.append(str);
+    }
+    return retBuffer.toString();
   }
 
   /**
@@ -171,7 +177,19 @@ public class SignTable {
    *          要设置的 sentence
    */
   public void addSentence(String sentence) {
-    Sentence.append(sentence);
+    // Sentence.append(sentence);
+    Sentences.add(sentence);
+  }
+
+  public int getIndexOfLastSen() {
+    return this.Sentences.size() - 1;
+  }
+
+  public void backpatch(ArrayList<Integer> lst, String Label, int Lpos) {
+    for (int i : lst) {
+      this.Sentences.set(i, this.Sentences.get(i) + Label + "\n");
+    }
+    this.Sentences.set(Lpos, Label + ": " + this.Sentences.get(Lpos));
   }
 
 }

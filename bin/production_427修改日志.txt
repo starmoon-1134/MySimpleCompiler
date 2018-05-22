@@ -41,7 +41,7 @@ FuncDef->Type id ( M0 ParaList ) { Sen return Expr ; }
 	
 5.20
 1.  删除  Condop->=
-2.  新增  ParaID->id [ ]  支持传递数组类型的参数
+2.  新增  ParaID->id [ ]  支持传递数组类型的参数,但未添加语义信息
 
 5.21
 1.  不支持复合表达式赋初值

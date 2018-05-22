@@ -14,9 +14,9 @@ ParaList1->Type ParaID , ParaList1
 ParaID->id
 ParaID->id [ ]
 Sen->DeclareS Sen
-Sen->AssignS Sen
-Sen->ifS Sen
-Sen->whileS Sen
+Sen->AssignS M3 Sen
+Sen->ifS M3 Sen
+Sen->whileS M3 Sen
 Sen->CallS Sen
 Sen->@null
 CallParaList->@null
@@ -49,32 +49,32 @@ Expr2->Const
 Expr2->id [ Expr ]
 Expr2->id ( M2 CallParaList )
 BoolE->BoolE1
-BoolE->BoolE || BoolE1
+BoolE->BoolE || M3 BoolE1
 BoolE1->BoolE2
-BoolE1->BoolE1 && BoolE2
+BoolE1->BoolE1 && M3 BoolE2
 BoolE2->BoolE3
 BoolE2->! BoolE3
 BoolE3->( BoolE )
 BoolE3->Expr Condop Expr
-ifS->if ( BoolE ) { ifSen }
-ifS->if ( BoolE ) { ifSen } else { ifSen }
-ifS->if ( BoolE ) { ifSen } else ifS
+ifS->if ( BoolE ) { M3 ifSen }
+ifS->if ( BoolE ) { M3 ifSen N0 } else { M3 ifSen }
+ifS->if ( BoolE ) { M3 ifSen N0 } else M3 ifS
 ifSen->Sen
 ifSen->Sen return Expr ;
-whileS->while ( BoolE ) { CirSen }
+whileS->while ( M3 BoolE ) { M3 CirSen }
 CallS->id ( M2 CallParaList ) ;
 CirSen->DeclareS CirSen
-CirSen->AssignS CirSen
-CirSen->CirifS CirSen
-CirSen->whileS CirSen
+CirSen->AssignS M3 CirSen
+CirSen->CirifS M3 CirSen
+CirSen->whileS M3 CirSen
 CirSen->CallS CirSen
 CirSen->return Expr ;
 CirSen->break ;
 CirSen->continue ;
 CirSen->@null
-CirifS->if ( BoolE ) { CirSen }
-CirifS->if ( BoolE ) { CirSen } else { CirSen }
-CirifS->if ( BoolE ) { CirSen } else CirifS
+CirifS->if ( BoolE ) { M3 CirSen }
+CirifS->if ( BoolE ) { M3 CirSen N0 } else { M3 CirSen }
+CirifS->if ( BoolE ) { M3 CirSen N0 } else M3 CirifS
 Condop->>
 Condop->>=
 Condop-><
@@ -94,3 +94,4 @@ M2->@null
 M3->@null
 M4->@null
 M5->@null
+N0->@null

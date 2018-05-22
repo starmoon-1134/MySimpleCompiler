@@ -19,6 +19,10 @@ int main(){
 	Carr[0] = 'a';
 	Iarr[2] = 5;
 	
+	if(b>1){
+		printf("b>1");
+	}
+	
 	aaaaa(889);
 	
 	printf("%c\n",c-subc);
