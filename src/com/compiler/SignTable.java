@@ -187,7 +187,10 @@ public class SignTable {
 
   public void backpatch(ArrayList<Integer> lst, String Label, int Lpos) {
     for (int i : lst) {
-      this.Sentences.set(i, this.Sentences.get(i) + Label + "\n");
+      String beforeInsert = this.Sentences.get(i);
+      if (beforeInsert.indexOf("@null产生的空行") < 0) {
+        this.Sentences.set(i, beforeInsert + Label + "\n");
+      }
     }
     if (!lst.isEmpty()) {
       this.Sentences.set(Lpos, Label + ": " + this.Sentences.get(Lpos));

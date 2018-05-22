@@ -14,7 +14,7 @@ ParaList1->Type ParaID , ParaList1
 ParaID->id
 ParaID->id [ ]
 Sen->DeclareS Sen
-Sen->AssignS M3 Sen
+Sen->AssignS Sen
 Sen->ifS M3 Sen
 Sen->whileS M3 Sen
 Sen->CallS Sen
@@ -64,7 +64,7 @@ ifSen->Sen return Expr ;
 whileS->while ( M3 BoolE ) { M3 CirSen }
 CallS->id ( M2 CallParaList ) ;
 CirSen->DeclareS CirSen
-CirSen->AssignS M3 CirSen
+CirSen->AssignS CirSen
 CirSen->CirifS M3 CirSen
 CirSen->whileS M3 CirSen
 CirSen->CallS CirSen

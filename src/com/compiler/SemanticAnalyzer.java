@@ -60,6 +60,7 @@ public class SemanticAnalyzer {
     codeSecBuff = new StringBuffer(".section .text\n");
     curTable.add(new Sign("printf", "int", -1, -1, null, true));
     curTable.add(new Sign("scanf", "int", -1, -1, null, true));
+    curTable.add(new Sign("getchar", "int", -1, -1, null, true));
   }
 
   public void executeAction(int proID) throws IOException {
@@ -189,9 +190,9 @@ public class SemanticAnalyzer {
       curTable.add(tmpSign);
       typeSt.pop();
     } else if (curString.equals("Sen->DeclareS Sen")) {
-      nextListST.push(new ArrayList<>());
-    } else if (curString.equals("Sen->AssignS M3 Sen")) {
-      nextListST.push(new ArrayList<>());
+
+    } else if (curString.equals("Sen->AssignS Sen")) {
+
     } else if (curString.equals("Sen->ifS M3 Sen")) {
       ArrayList<Integer> s2NextList = nextListST.pop();
       curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
@@ -201,9 +202,11 @@ public class SemanticAnalyzer {
       curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
       nextListST.push(s2NextList);
     } else if (curString.equals("Sen->CallS ; Sen")) {
-      nextListST.push(new ArrayList<>());
+
     } else if (curString.equals("Sen->@null")) {
-      nextListST.push(new ArrayList<>());
+      ArrayList<Integer> nextList = new ArrayList<>();
+      nextList.add(curTable.getIndexOfLastSen());
+      nextListST.push(nextList);
       curTable.addSentence("    #Sen->@null产生的空行\n");
     } else if (curString.equals("CallParaList->@null")) {
 
@@ -396,9 +399,9 @@ public class SemanticAnalyzer {
       curTable.clearInnerVarCtn();
 
     } else if (curString.equals("CirSen->DeclareS CirSen")) {
-      nextListST.push(new ArrayList<>());
-    } else if (curString.equals("CirSen->AssignS M3 CirSen")) {
-      nextListST.push(new ArrayList<>());
+
+    } else if (curString.equals("CirSen->AssignS CirSen")) {
+
     } else if (curString.equals("CirSen->CirifS M3 CirSen")) {
       ArrayList<Integer> s2NextList = nextListST.pop();
       curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
@@ -408,15 +411,17 @@ public class SemanticAnalyzer {
       curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
       nextListST.push(s2NextList);
     } else if (curString.equals("CirSen->return Expr ;")) {
-      curTable.clearInnerVarCtn();
+
     } else if (curString.equals("CirSen->break ;")) {
 
     } else if (curString.equals("CirSen->continue ;")) {
 
     } else if (curString.equals("CirSen->CallS CirSen")) {
-      nextListST.push(new ArrayList<>());
+
     } else if (curString.equals("CirSen->@null")) {
-      nextListST.push(new ArrayList<>());
+      ArrayList<Integer> nextList = new ArrayList<>();
+      nextList.add(curTable.getIndexOfLastSen());
+      nextListST.push(nextList);
       curTable.addSentence("    #CirSen->@null产生的空行\n");
     } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen }")) {
       curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));

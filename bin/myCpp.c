@@ -1,4 +1,94 @@
+int total;
+float sum;
+float max(float a,float b){
+	float ret;
+	ret	= a;
+	if(a>=b){
+		ret = a;
+	}else{
+		ret = b;
+	}
+	return ret;
+}
+int main(){
+	char a[10];
+	float b;
+	float d;
+	int i;
+	char tmpchar;
+	i=0;
+	printf("input array[10] of char_\n");
+	while(i<10){
+		scanf("%c",tmpchar);
+		a[i] = tmpchar;
+		getchar();
+		i=i+1;
+	}
+	i=0;
+	printf("before sort_\n");
+	while(i<10){
+		printf("a[%d] is %c\n", i,a[i]);
+		i=i+1;
+	}
+	int times;
+	times=1;
+	while(times!=0){
+		times=0;
+		i=0;
+		while(i<10-1){
+			if(a[i]>a[i+1]){
+				char tmp;
+				tmp=a[i];
+				a[i]=a[i+1];
+				a[i+1]=tmp;
+				times = times+1;
+			}
+			i=i+1;
+		}
+	}
+	printf("after sort_\n");
+	i=0;
+	while(i<10){
+		printf("a[%d] is %c\n", i,a[i]);
+		i=i+1;
+	}
+	
+	printf("input float b_");
+	scanf("%f",b);
+	printf("input float d_");
+	scanf("%f",d);
+	printf("b is %f\n",b);
+	printf("d is %f\n",d);
+	float maxnum;
+	maxnum = max(b,d);
+	printf("maxnum is %f\n",maxnum);
+	
+	printf("input int total_");
+	scanf("%d",total);
+	float j;
+	j=0.0;
+	sum=0.0;
+	/* while(j<total){
+		printf("j is %f_\n",j/10.0);
+		if(j/10.0==0){
+			j=j+1;
+			printf("continue\n");
+			continue;
+		}
+		sum=sum+j;
+		printf("sum is %f_\n",sum);
+		j=j+1;
+		if(sum>=1000){
+			break;
+		}
+	} */
+	printf("sum is %f_\n",sum);
+	
+	return 0;
+}
 
+
+/* 
 int aaaaa(int i){
 	test(i);
 	return 0;
@@ -52,3 +142,4 @@ int main(){
 	return 0;
 }
 
+ */
