@@ -245,7 +245,7 @@ public class SemanticAnalyzer {
         if (paraSign.isGlobal) {
           curTable.addSentence("    movl $" + paraSign.id + ",%ebx\n");
         } else {
-          curTable.addSentence("    movl " + paraSign.offset + "(%ebp),%ebx\n");
+          curTable.addSentence("    leal " + paraSign.offset + "(%ebp),%ebx\n");
         }
         curTable.addSentence("    movl %ebx," + paraSize.peek() + "(%esp)\n");
         paraSize.push(paraSize.pop() + 4);
@@ -766,9 +766,11 @@ public class SemanticAnalyzer {
         // 如果之前变量是char，进行4字节对齐
         curTable.addLocalOffset(4 - offset % 4);
       }
+      curTable.addLocalOffset(sizeOFid * (arrayLen - 1));
       Sign tmpSign = new Sign(valueSt.peek(), typeSt.peek() + "Array", curTable.getLocalOffset(),
           -1, null, false);
-      curTable.addLocalOffset(sizeOFid * arrayLen);
+      curTable.addLocalOffset(sizeOFid);
+      // curTable.addLocalOffset(sizeOFid * arrayLen);
       curTable.add(tmpSign);
     }
   }
@@ -872,7 +874,7 @@ public class SemanticAnalyzer {
             curTable.addSentence("    fiadd " + bSign.offset + "(%ebp)\n");
           }
           curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
-        } else {// float+float
+        } else { // -----------------------------------float+float
           if (aSign.isGlobal) {
             curTable.addSentence("    flds " + aSign.id + "\n");
           } else {
@@ -904,6 +906,19 @@ public class SemanticAnalyzer {
           }
           curTable.addSentence("    add %ebx,%eax\n");
           curTable.addSentence("    movl %eax," + curTable.getLocalOffset() + "(%ebp)\n");
+        } else { // -------------------------------int + float
+          innerType = "float";
+          if (aSign.isGlobal) {
+            curTable.addSentence("    fild " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    fild " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fadd " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fadd " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
         }
       } else {
         System.err.println("不支持char和" + bSign.type + "+运算 ");
@@ -992,9 +1007,132 @@ public class SemanticAnalyzer {
         System.err.println("不支持char和" + bSign.type + "+运算 ");
       }
     } else if (op == '*') {
-
+      if (aSign.type.indexOf("char") >= 0) {
+        System.err.println("char类型不支持*运算");
+      } else if (aSign.type.indexOf("float") >= 0) {// float
+        innerType = "float";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("char类型不支持*运算");
+        } else if (bSign.type.indexOf("int") >= 0) { // float*int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fimul " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fimul " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        } else {// ----------------------------------------float * float
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fmul " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fmul " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      } else if (aSign.type.indexOf("int") >= 0) {// int
+        innerType = "int";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("char类型不支持*运算");
+        } else if (bSign.type.indexOf("float") >= 0) {// int * float
+          innerType = "float";
+          if (aSign.isGlobal) {
+            curTable.addSentence("    fild " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    fild " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fmul " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fmul " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        } else {// ------------------------------------int * int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    movl " + aSign.id + ",%eax\n");
+          } else {
+            curTable.addSentence("    movl " + aSign.offset + "(%ebp),%eax\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    imul " + bSign.id + ",%eax\n");
+          } else {
+            curTable.addSentence("    imul " + bSign.offset + "(%ebp),%eax\n");
+          }
+          curTable.addSentence("    movl %eax," + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      }
     } else if (op == '/') {
-
+      if (aSign.type.indexOf("char") >= 0) {
+        System.err.println("char类型不支持/运算");
+      } else if (aSign.type.indexOf("float") >= 0) {// float
+        innerType = "float";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("char类型不支持*运算");
+        } else if (bSign.type.indexOf("int") >= 0) { // float/int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fidiv " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fidiv " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        } else {// --------------------------------float / float
+          if (aSign.isGlobal) {
+            curTable.addSentence("    flds " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    flds " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fdiv " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fdiv " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      } else if (aSign.type.indexOf("int") >= 0) {// int
+        innerType = "int";
+        if (bSign.type.indexOf("char") >= 0) {
+          System.err.println("char类型不支持*运算");
+        } else if (bSign.type.indexOf("float") >= 0) {// int / float
+          innerType = "float";
+          if (aSign.isGlobal) {
+            curTable.addSentence("    fild " + aSign.id + "\n");
+          } else {
+            curTable.addSentence("    fild " + aSign.offset + "(%ebp)\n");
+          }
+          if (bSign.isGlobal) {
+            curTable.addSentence("    fdiv " + bSign.id + "\n");
+          } else {
+            curTable.addSentence("    fdiv " + bSign.offset + "(%ebp)\n");
+          }
+          curTable.addSentence("    fstps " + curTable.getLocalOffset() + "(%ebp)\n");
+        } else {// int / int
+          if (aSign.isGlobal) {
+            curTable.addSentence("    movl " + aSign.id + ",%eax\n");
+          } else {
+            curTable.addSentence("    movl " + aSign.offset + "(%ebp),%eax\n");
+          }
+          curTable.addSentence("    CDQ\n");
+          if (bSign.isGlobal) {
+            curTable.addSentence("    idiv " + bSign.id + ",%eax\n");
+          } else {
+            curTable.addSentence("    idiv " + bSign.offset + "(%ebp),%eax\n");
+          }
+          curTable.addSentence("    movl %eax," + curTable.getLocalOffset() + "(%ebp)\n");
+        }
+      }
     }
     Sign innerSign = new Sign(innerID, innerType, curTable.getLocalOffset(), -1, null, false);
     curTable.add(innerSign);

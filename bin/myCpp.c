@@ -1,4 +1,4 @@
-int total;
+/* int total;
 float sum;
 float max(float a,float b){
 	float ret;
@@ -63,12 +63,13 @@ int main(){
 	maxnum = max(b,d);
 	printf("maxnum is %f\n",maxnum);
 	
+	/*
 	printf("input int total_");
 	scanf("%d",total);
 	float j;
 	j=0.0;
 	sum=0.0;
-	/* while(j<total){
+	 while(j<total){
 		printf("j is %f_\n",j/10.0);
 		if(j/10.0==0){
 			j=j+1;
@@ -81,11 +82,46 @@ int main(){
 		if(sum>=1000){
 			break;
 		}
-	} */
-	printf("sum is %f_\n",sum);
+	} 
+	printf("sum is %f\n",sum);
+	*/
+	
+	/*
+	return 0;
+} */
+
+int main(){
+	int intA,intB;
+	float floatA,floatB;
+	printf("input intA  \n");
+	scanf("%d",intA);
+	printf("input intB  \n");
+	scanf("%d",intB);
+	printf("input floatA  \n");
+	scanf("%f",floatA);
+	printf("input floatB  \n");
+	scanf("%f",floatB);
+	printf("intA+intB=%d\n",intA+intB);
+	printf("intA-intB=%d\n",intA-intB);
+	printf("intA*intB=%d\n",intA*intB);
+	printf("intA/intB=%d\n",intA/intB);
+	printf("floatA+floatB=%f\n",floatA+floatB);
+	printf("floatA-floatB=%f\n",floatA-floatB);
+	printf("floatA*floatB=%f\n",floatA*floatB);
+	printf("floatA/floatB=%f\n",floatA/floatB);
+	
+	printf("intA+floatB=%f\n",intA+floatB);
+	printf("floatA*intB=%f\n",floatA*intB);
+	
+	printf("intA=%d\n",intA);
+	printf("intB=%d\n",intB);
+	printf("floatA=%f\n",floatA);
+	printf("floatB=%f\n",floatB);
+	
 	
 	return 0;
 }
+
 
 
 /* 
