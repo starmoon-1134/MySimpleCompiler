@@ -189,7 +189,7 @@ public class SemanticAnalyzer {
       curTable.add(tmpSign);
       typeSt.pop();
     } else if (curString.equals("Sen->DeclareS Sen")) {
-
+      nextListST.push(new ArrayList<>());
     } else if (curString.equals("Sen->AssignS M3 Sen")) {
       nextListST.push(new ArrayList<>());
     } else if (curString.equals("Sen->ifS M3 Sen")) {
@@ -201,9 +201,10 @@ public class SemanticAnalyzer {
       curTable.backpatch(nextListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
       nextListST.push(s2NextList);
     } else if (curString.equals("Sen->CallS ; Sen")) {
-
+      nextListST.push(new ArrayList<>());
     } else if (curString.equals("Sen->@null")) {
-
+      nextListST.push(new ArrayList<>());
+      curTable.addSentence("    #Sen->@null产生的空行\n");
     } else if (curString.equals("CallParaList->@null")) {
 
     } else if (curString.equals("CallParaList->CallExpr")) {
@@ -360,7 +361,7 @@ public class SemanticAnalyzer {
     } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen }")) {
       curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
       nextListST.push(merge(nextListST.pop(), falseListST.pop()));
-    } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen N0 } else { M3 ifSen }")) {
+    } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen } N0 else { M3 ifSen }")) {
       String mLastLabel = labelSt.pop();
       ArrayList<Integer> s2nextList = nextListST.pop();
       ArrayList<Integer> nnextList = nextListST.pop();
@@ -368,7 +369,7 @@ public class SemanticAnalyzer {
       curTable.backpatch(falseListST.pop(), mLastLabel, LabelMap.get(mLastLabel));
       nextListST.push(merge(nextListST.pop(), merge(nnextList, s2nextList)));
 
-    } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen N0 } else M3 ifS")) {
+    } else if (curString.equals("ifS->if ( BoolE ) { M3 ifSen } N0 else M3 ifS")) {
       String mLastLabel = labelSt.pop();
       ArrayList<Integer> s2nextList = nextListST.pop();
       ArrayList<Integer> nnextList = nextListST.pop();
@@ -386,7 +387,7 @@ public class SemanticAnalyzer {
       curTable.backpatch(nextListST.pop(), m1Label, LabelMap.get(m1Label));
       curTable.backpatch(trueListST.pop(), m2Label, LabelMap.get(m2Label));
       nextListST.push(falseListST.pop());
-      curTable.addSentence("    jmp " + m1Label);
+      curTable.addSentence("    jmp " + m1Label + "\n");
 
     } else if (curString.equals("CallS->id ( M2 CallParaList ) ;")) {
       curTable.addSentence("    call _" + valueSt.pop() + "\n\n");
@@ -395,7 +396,7 @@ public class SemanticAnalyzer {
       curTable.clearInnerVarCtn();
 
     } else if (curString.equals("CirSen->DeclareS CirSen")) {
-
+      nextListST.push(new ArrayList<>());
     } else if (curString.equals("CirSen->AssignS M3 CirSen")) {
       nextListST.push(new ArrayList<>());
     } else if (curString.equals("CirSen->CirifS M3 CirSen")) {
@@ -413,13 +414,14 @@ public class SemanticAnalyzer {
     } else if (curString.equals("CirSen->continue ;")) {
 
     } else if (curString.equals("CirSen->CallS CirSen")) {
-
+      nextListST.push(new ArrayList<>());
     } else if (curString.equals("CirSen->@null")) {
-
+      nextListST.push(new ArrayList<>());
+      curTable.addSentence("    #CirSen->@null产生的空行\n");
     } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen }")) {
       curTable.backpatch(trueListST.pop(), labelSt.peek(), LabelMap.get(labelSt.pop()));
       nextListST.push(merge(nextListST.pop(), falseListST.pop()));
-    } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen N0 } else { M3 CirSen }")) {
+    } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen } N0 else { M3 CirSen }")) {
       String mLastLabel = labelSt.pop();
       ArrayList<Integer> s2nextList = nextListST.pop();
       ArrayList<Integer> nnextList = nextListST.pop();
@@ -427,7 +429,7 @@ public class SemanticAnalyzer {
       curTable.backpatch(falseListST.pop(), mLastLabel, LabelMap.get(mLastLabel));
       nextListST.push(merge(nextListST.pop(), merge(nnextList, s2nextList)));
 
-    } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen N0 } else M3 CirifS")) {
+    } else if (curString.equals("CirifS->if ( BoolE ) { M3 CirSen } N0 else M3 CirifS")) {
       String mLastLabel = labelSt.pop();
       ArrayList<Integer> s2nextList = nextListST.pop();
       ArrayList<Integer> nnextList = nextListST.pop();
@@ -536,7 +538,10 @@ public class SemanticAnalyzer {
     } else if (curString.equals("M7->@null")) {
 
     } else if (curString.equals("N0->@null")) {
-      nextListST.push(new ArrayList<>(curTable.getIndexOfLastSen()));
+      ArrayList<Integer> nextList = new ArrayList<>();
+      nextList.add(curTable.getIndexOfLastSen());
+      nextListST.push(nextList);
+      curTable.addSentence("    jmp ");
     }
   }
 
@@ -1187,9 +1192,9 @@ public class SemanticAnalyzer {
     }
     ArrayList<Integer> trueList = new ArrayList<>();
     ArrayList<Integer> falseList = new ArrayList<>();
-    trueList.add(curTable.getIndexOfLastSen());
-    curTable.addSentence("jmp ");
+    trueList.add(curTable.getIndexOfLastSen() - 1);
     falseList.add(curTable.getIndexOfLastSen());
+    curTable.addSentence("    jmp ");
     trueListST.push(trueList);
     falseListST.push(falseList);
   }

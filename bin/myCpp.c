@@ -19,10 +19,20 @@ int main(){
 	Carr[0] = 'a';
 	Iarr[2] = 5;
 	
-	if(b>1){
-		printf("b>1");
+	b=10;
+	while(b>0){
+		printf("b=%d\n",b);
+		b = b-1;
 	}
 	
+	if(b>1){
+		printf("b>1\n");
+		if(Iarr[2]==5){
+			printf("Iarr[2]=5\n");
+			}
+	}else{
+		printf("b<=1\n");
+	}
 	aaaaa(889);
 	
 	printf("%c\n",c-subc);

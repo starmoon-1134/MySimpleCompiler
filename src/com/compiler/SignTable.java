@@ -182,14 +182,16 @@ public class SignTable {
   }
 
   public int getIndexOfLastSen() {
-    return this.Sentences.size() - 1;
+    return this.Sentences.size();
   }
 
   public void backpatch(ArrayList<Integer> lst, String Label, int Lpos) {
     for (int i : lst) {
       this.Sentences.set(i, this.Sentences.get(i) + Label + "\n");
     }
-    this.Sentences.set(Lpos, Label + ": " + this.Sentences.get(Lpos));
+    if (!lst.isEmpty()) {
+      this.Sentences.set(Lpos, Label + ": " + this.Sentences.get(Lpos));
+    }
   }
 
 }

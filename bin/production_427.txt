@@ -57,8 +57,8 @@ BoolE2->! BoolE3
 BoolE3->( BoolE )
 BoolE3->Expr Condop Expr
 ifS->if ( BoolE ) { M3 ifSen }
-ifS->if ( BoolE ) { M3 ifSen N0 } else { M3 ifSen }
-ifS->if ( BoolE ) { M3 ifSen N0 } else M3 ifS
+ifS->if ( BoolE ) { M3 ifSen } N0 else { M3 ifSen }
+ifS->if ( BoolE ) { M3 ifSen } N0 else M3 ifS
 ifSen->Sen
 ifSen->Sen return Expr ;
 whileS->while ( M3 BoolE ) { M3 CirSen }
@@ -73,8 +73,8 @@ CirSen->break ;
 CirSen->continue ;
 CirSen->@null
 CirifS->if ( BoolE ) { M3 CirSen }
-CirifS->if ( BoolE ) { M3 CirSen N0 } else { M3 CirSen }
-CirifS->if ( BoolE ) { M3 CirSen N0 } else M3 CirifS
+CirifS->if ( BoolE ) { M3 CirSen } N0 else { M3 CirSen }
+CirifS->if ( BoolE ) { M3 CirSen } N0 else M3 CirifS
 Condop->>
 Condop->>=
 Condop-><
@@ -92,6 +92,4 @@ M0->@null
 M1->@null
 M2->@null
 M3->@null
-M4->@null
-M5->@null
 N0->@null

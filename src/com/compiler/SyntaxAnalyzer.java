@@ -238,7 +238,7 @@ public class SyntaxAnalyzer {
     symbolSt.push("@end");
     String curLine;
     while ((curLine = fin.readLine()) != null) {
-      testnum[stateSt.peek()] = true;
+      // testnum[stateSt.peek()] = true;
       String[] tmpStrings = curLine.split(":");
       String nextSymbol = tmpStrings[0];
       while (true) {// bug5.规约之后nextSymbol并没有入栈，不应该再去读下一行
@@ -289,11 +289,11 @@ public class SyntaxAnalyzer {
         }
       } // while(true)
     } // while(curline!=null)
-    int used = 0;
-    for (int i = 0; i < 416; i++) {
-      if (testnum[i])
-        used++;
-    }
+    // int used = 0;
+    // for (int i = 0; i < 416; i++) {
+    // if (testnum[i])
+    // used++;
+    // }
     // System.out.println("used:" + used);
     fin.close();
     FileReader.close();
