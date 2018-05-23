@@ -1,4 +1,4 @@
-/* int total;
+int total;
 float sum;
 float max(float a,float b){
 	float ret;
@@ -63,34 +63,10 @@ int main(){
 	maxnum = max(b,d);
 	printf("maxnum is %f\n",maxnum);
 	
-	/*
-	printf("input int total_");
-	scanf("%d",total);
-	float j;
-	j=0.0;
-	sum=0.0;
-	 while(j<total){
-		printf("j is %f_\n",j/10.0);
-		if(j/10.0==0){
-			j=j+1;
-			printf("continue\n");
-			continue;
-		}
-		sum=sum+j;
-		printf("sum is %f_\n",sum);
-		j=j+1;
-		if(sum>=1000){
-			break;
-		}
-	} 
-	printf("sum is %f\n",sum);
-	*/
-	
-	/*
 	return 0;
-} */
+}
 
-int main(){
+/* int main(){
 	int intA,intB;
 	float floatA,floatB;
 	printf("input intA  \n");
@@ -104,14 +80,15 @@ int main(){
 	printf("intA+intB=%d\n",intA+intB);
 	printf("intA-intB=%d\n",intA-intB);
 	printf("intA*intB=%d\n",intA*intB);
-	printf("intA/intB=%d\n",intA/intB);
+	printf("intA/intB=%d\n\n",intA/intB);
+	
 	printf("floatA+floatB=%f\n",floatA+floatB);
 	printf("floatA-floatB=%f\n",floatA-floatB);
 	printf("floatA*floatB=%f\n",floatA*floatB);
-	printf("floatA/floatB=%f\n",floatA/floatB);
+	printf("floatA/floatB=%f\n\n",floatA/floatB);
 	
 	printf("intA+floatB=%f\n",intA+floatB);
-	printf("floatA*intB=%f\n",floatA*intB);
+	printf("floatA*intB=%f\n\n",floatA*intB);
 	
 	printf("intA=%d\n",intA);
 	printf("intB=%d\n",intB);
@@ -120,62 +97,4 @@ int main(){
 	
 	
 	return 0;
-}
-
-
-
-/* 
-int aaaaa(int i){
-	test(i);
-	return 0;
-}
-
-int test(int i){
-	printf("func_test_   %d\n",i);
-	return 0;
-}
-
-int main(){
-	float fff=3.3;
-	int b=2;
-	char subc=1,c='e';
-	char Carr[5];
-	int Iarr[3];
-	
-	Carr[0] = 'a';
-	Iarr[2] = 5;
-	
-	b=10;
-	while(b>0){
-		printf("b=%d\n",b);
-		b = b-1;
-	}
-	
-	if(b>1){
-		printf("b>1\n");
-		if(Iarr[2]==5){
-			printf("Iarr[2]=5\n");
-			}
-	}else{
-		printf("b<=1\n");
-	}
-	aaaaa(889);
-	
-	printf("%c\n",c-subc);
-	printf("%d\n",Iarr[b]+1);
-	
-	printf("%f\n",fff+b);
-	printf("%f\n",b+fff);
-	printf("%f\n",fff+fff);
-	printf("%d\n",b+b);
-	
-	printf("%f\n",fff-b);
-	printf("%f\n",b-fff);
-	printf("%f\n",fff-1.5);
-	printf("%d\n",b-1);
-	printf("%d\n",1-b);
-	
-	return 0;
-}
-
- */
+} */
